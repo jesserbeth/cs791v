@@ -13,32 +13,55 @@
 #include "add.h"
 
 int main() {
-  int max_threads = 512;
-  // int max_blocks = 
+  cudaDeviceProp prop; 	
+  cudaError_t dev_err = cudaGetDeviceProperties(&prop, 0);
+  if (dev_err != cudaSuccess) {
+    std::cerr << "Error: " << cudaGetErrorString(dev_err) << std::endl;
+    exit(1);
+  }
+  // printf("threads: %d \n", prop.maxThreadsPerBlock);
+  // printf("blocks: %d \n", prop.maxThreadsDim[0]);
+  // printf("grids: %d \n", prop.maxGridSize[0]);
+  // printf("blocks: %d \n", prop.maxThreadsDim[1]);
+  // printf("grids: %d \n", prop.maxGridSize[1]);
+  // printf("blocks: %d \n", prop.maxThreadsDim[2]);
+  // printf("grids: %d \n", prop.maxGridSize[2]);
+  int max_threads = prop.maxThreadsPerBlock;
+  int max_blocks = prop.maxThreadsDim[0];
+  int max_input = 10000000;
   // Arrays on the host (CPU)
   // int a[N], b[N], c[N];
   int n, T, B;
+
+  // bool flag = false;
   // Input size for N, B and T
-  printf("Input Size of N: ");
-  scanf("%d", &n);
-  // printf("N: %d \n", size);
-  if(n <= 0){
-    printf("Error: Wrong input value for N \n");
-    return 0;
-  }
-  printf("Input Size of T: ");
-  scanf("%d", &T);
-  if(T <= 0){
-    printf("Error: Wrong input value for T \n");
-    return 0;
-  }
-  printf("Input Size of B: ");
-  scanf("%d", &B);
-  if(B <= 0){
-    printf("Error: Wrong input value for B \n");
-    return 0;
-  }
-  
+  printf("Input Size of N (0 < N < 10,000,000): ");
+	scanf(" %d", &n);
+	// printf("N: %d \n", size);
+	if(n <= 0)
+		printf("Error: Wrong input value for N \n");
+	else if( n > max_input)
+		printf("Error: Size too large, setting N = 10,000,000 \n");
+		n = 10000000;
+
+	printf("Input Size of T (0 < T < 1024): ");
+	scanf(" %d", &T);
+	  
+	if(T <= 0)
+		printf("Error: Wrong input value for T \n");
+	else if( T > max_threads)
+		printf("Error: Size too large, setting T = 1024 \n");
+		T = 1024;
+
+	  printf("Input Size of B (0 < B < 1024): ");
+	  scanf(" %d", &B);
+
+	if(B <= 0){
+	    printf("Error: Wrong input value for B \n");
+	  }
+	else if( B > max_blocks)
+		printf("Error: Size too large");
+
   // Dynamically allocate arrays based on keyboard inputs
   int *a, *b, *c;
   a = (int*) malloc(n*sizeof(int));

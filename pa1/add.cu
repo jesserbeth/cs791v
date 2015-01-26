@@ -13,6 +13,7 @@ __global__ void add(int *a, int *b, int *c, int size) {
 
   int thread_id = blockIdx.x * blockDim.x + threadIdx.x;
   while( thread_id < size ){
+    // if(thread_id < size)  
       c[thread_id] = a[thread_id] + b[thread_id];
       thread_id += blockDim.x * gridDim.x;
     }
