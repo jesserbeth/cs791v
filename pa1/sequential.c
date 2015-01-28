@@ -7,20 +7,22 @@ int main() {
   int max_input = 10000000;
   // Arrays on the host (CPU)
   // int a[N], b[N], c[N];
-  // int n;
-  std::ofstream out("seq.csv");
+  int n;
+  // std::ofstream out("seq.csv");
 
   // Input size for N, B and T
- //  printf("Input Size of N (0 < N < 10,000,000): ");
-	// scanf(" %d", &n);
-	// // printf("N: %d \n", size);
-	// if(n <= 0)
-	// 	printf("Error: Wrong input value for N \n");
-	// else if( n > max_input)
-	// 	printf("Error: Size too large, setting N = 10,000,000 \n");
-		// n = 10000000;
-  
-	for(int j = 1000000; j < 100000000; j += 500000){
+  printf("Input Size of N (0 < N < 10,000,000): ");
+	scanf(" %d", &n);
+	// printf("N: %d \n", size);
+	if(n <= 0)
+		printf("Error: Wrong input value for N \n");
+	else if( n > max_input){
+		printf("Error: Size too large, setting N = 10,000,000 \n");
+		n = 10000000;
+  	}
+  	
+	// for(int j = 1000000; j < 100000001; j += 500000){
+  	  int j = n;
   	  struct timeval start, fin;
 	  // Dynamically allocate arrays based on keyboard inputs
 	  int *a, *b, *c;
@@ -45,8 +47,8 @@ int main() {
 	  double t = fin.tv_usec + fin.tv_sec * 1000000.0;
 	  t -= start.tv_usec + start.tv_sec * 1000000.0;
 	  t /= 1000000.0;
-	  // std::cout << t << std::endl;
-	  out << t << std::endl;
+	  std::cout << "Processing " << j << " inputs took " << t << " microseconds" << std::endl;
+	  // out << t << std::endl;
 	  /*
 	    Let's check that the results are what we expect.
 	   */
@@ -59,5 +61,5 @@ int main() {
 		delete a;
 		delete b;
 		delete c;
-	}
+	// }
 }	

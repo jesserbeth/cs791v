@@ -1,11 +1,7 @@
 /*
-  This program demonstrates the basics of working with cuda. We use
-  the GPU to add two arrays. We also introduce cuda's approach to
-  error handling and timing using cuda Events.
-
-  This is the main program. You should also look at the header add.h
-  for the important declarations, and then look at add.cu to see how
-  to define functions that execute on the GPU.
+  PROGRAMMING ASSIGNMENT 1
+  JESSICA SMITH
+  CS791V
  */
 
 #include <iostream>
@@ -20,21 +16,11 @@ int main() {
     std::cerr << "Error: " << cudaGetErrorString(dev_err) << std::endl;
     exit(1);
   }
-  // printf("threads: %d \n", prop.maxThreadsPerBlock);
-  // printf("blocks: %d \n", prop.maxThreadsDim[0]);
-  // printf("grids: %d \n", prop.maxGridSize[0]);
-  // printf("blocks: %d \n", prop.maxThreadsDim[1]);
-  // printf("grids: %d \n", prop.maxGridSize[1]);
-  // printf("blocks: %d \n", prop.maxThreadsDim[2]);
-  // printf("grids: %d \n", prop.maxGridSize[2]);
   int max_threads = prop.maxThreadsPerBlock;
   int max_blocks = prop.maxThreadsDim[0];
   int max_input = 10000000;
-  int max_seq = max_threads * max_blocks;
-  // printf("MAX SEQ: %d", max_seq);
+  int max_seq;
   bool striding = true;
-  // Arrays on the host (CPU)
-  // int a[N], b[N], c[N];
   int n, T, B;
 
   printf("Use striding? (No: 0, Yes: 1): ");
@@ -47,7 +33,7 @@ int main() {
   	printf("Error, Invalid input. Aborting.\n");
   	return 0;
   }
-  /*
+
   // Input size for N, B and T
   printf("Input Size of N (0 < N < 10,000,000): ");
 	scanf(" %d", &n);
@@ -58,11 +44,6 @@ int main() {
 		printf("Error: Size too large, setting N = 10,000,000 \n");
 		n = 10000000;
 
-	// Check for striding need
-	if(n > max_seq && striding == false){
-		printf("Striding is needed for this input size: Using Striding.\n");
-		striding = true;
-	}
 
 	printf("Input Size of T (0 < T < 1024): ");
 	scanf(" %d", &T);
@@ -81,25 +62,23 @@ int main() {
 	  }
 	else if( B > max_blocks)
 		printf("Error: Size too large");
-  */
-  
-  std::ofstream out("no_striding_max_input.csv");
 
-  n = 1048575;
+	max_seq = B * T;
+	// Check for striding need
+	if(n > max_seq && striding == false){
+		printf("Striding is needed for this input size: Using Striding.\n");
+		striding = true;
+	}
+  
+  // std::ofstream out("no_striding_max_input.csv");
+
+  // n = 1048575;
   // Dynamically allocate arrays based on keyboard inputs
   int *a, *b, *c;
   a = (int*) malloc(n*sizeof(int));
   b = (int*) malloc(n*sizeof(int));
   c = (int*) malloc(n*sizeof(int));
 
-  // a = (int*) malloc(n);
-  // b = (int*) malloc(n);
-  // c = (int*) malloc(n);
-
-  /*
-    These will point to memory on the GPU - notice the correspondence
-    between these pointers and the arrays declared above.
-   */
   int *dev_a, *dev_b, *dev_c;
 
   cudaError_t err = cudaMalloc( (void**) &dev_a, n * sizeof(int));
@@ -126,15 +105,17 @@ int main() {
     b[i] = i;
   }
 
-  for(int i = 10; i < 1024; i += 100){
-  	for(int j = 10; j < 1024; j += 100){
-  		  T = i;
-  		  B = j;
-  		  n = B * T;
+  // for(int i = 10; i < 1024; i += 100){
+  // 	for(int j = 10; j < 1024; j += 100){
+  		  // T = i;
+  		  // B = j;
+  		  // n = B * T;
 
 		  cudaEvent_t start, end;
 		  cudaEventCreate(&start);
 		  cudaEventCreate(&end);
+
+		  cudaEventRecord( start, 0 );
 
 		  err = cudaMemcpy(dev_a, a, n * sizeof(int), cudaMemcpyHostToDevice);
 		  err = cudaMemcpy(dev_b, b, n * sizeof(int), cudaMemcpyHostToDevice);
@@ -145,19 +126,16 @@ int main() {
 		    exit(1);
 		  }
 
-
-		  cudaEventRecord( start, 0 );
-
 		  add<<<B,T>>>(dev_a, dev_b, dev_c, n, striding);
-		  cudaEventRecord( end, 0 );
-		  cudaEventSynchronize( end );
 
 		  cudaMemcpy(c, dev_c, n * sizeof(int), cudaMemcpyDeviceToHost);
+		  
+		  cudaEventRecord( end, 0 );
+		  cudaEventSynchronize( end );
 		  
 		  float elapsedTime;
 		  cudaEventElapsedTime( &elapsedTime, start, end );
 		  
-
 		  /*
 		    Let's check that the results are what we expect.
 		   */
@@ -182,21 +160,21 @@ int main() {
 		    }
 		  }
 
-		  // std::cout << "Yay! Your program's results are correct." << std::endl;
-		  // std::cout << "Your program took: " << elapsedTime << " ms." << std::endl;
+		  std::cout << "Yay! Your program's results are correct." << std::endl;
+		  std::cout << "Your program took: " << elapsedTime << " ms." << std::endl;
 		  
 		  // Cleanup in the event of success.
 		  cudaEventDestroy( start );
 		  cudaEventDestroy( end );
 
-		  // write to file
-		  int threads = i;
-		  int blocks = j;
-		  out << elapsedTime << ',' << threads << ',' << blocks << '\n' ;
+		  // // write to file
+		  // int threads = i;
+		  // int blocks = j;
+		  // out << elapsedTime << ',' << threads << ',' << blocks << '\n' ;
 
-  	}  	// std::cout << i << std::endl;
-  	std::cout << 't' << std::endl;
-  }
+  // 	} 
+  // 	std::cout << 't' << std::endl;
+  // }
 		  cudaFree(dev_a);
 		  cudaFree(dev_b);
 		  cudaFree(dev_c);
@@ -205,5 +183,5 @@ int main() {
 		  free(b);
 		  free(c);
 
-  out.close();
+  // out.close();
 }	
