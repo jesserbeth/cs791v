@@ -9,13 +9,19 @@
   pointers we pass in should point to memory on the device, but this
   is not indicated by the function's signature.
  */
-__global__ void add(int *a, int *b, int *c, int size) {
-
-  int thread_id = blockIdx.x * blockDim.x + threadIdx.x;
-  while( thread_id < size ){
-    // if(thread_id < size)  
-      c[thread_id] = a[thread_id] + b[thread_id];
-      thread_id += blockDim.x * gridDim.x;
-    }
-
+__global__ void add(int *a, int *b, int *c, int size, bool striding) {
+  if(striding == true){
+	int thread_id = blockIdx.x * blockDim.x + threadIdx.x;
+	while( thread_id < size ){
+	// if(thread_id < size)  
+	  c[thread_id] = a[thread_id] + b[thread_id];
+	  thread_id += blockDim.x * gridDim.x;  	
+  	}
+  }
+  else{
+  	int tid = blockIdx.x * blockDim.x + threadIdx.x;
+  	if(tid<size){
+  		c[tid] = a[tid] + b[tid];
+  	}
+  }
 }

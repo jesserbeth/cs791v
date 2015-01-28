@@ -10,6 +10,6 @@
 #define N 1024
 
 // This is the declaration of the function that will execute on the GPU.
-__global__ void add(int*, int*, int*, int);
+__global__ void add(int*, int*, int*, int, bool);
 
 #endif // ADD_H_
