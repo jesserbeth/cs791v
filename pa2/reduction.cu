@@ -16,20 +16,18 @@ int main() {
   int check = 0;
   int result = 0;
   float calcTime, memTransTime;
-  std::ofstream out("ParVSSeq.csv");
+  // std::ofstream out("ParVSSeq.csv");
   // std::ofstream out("test.csv");
-  for(int p = 18; p < 24; p++){
+  for(int p = 8; p < 11; p++){
 		// Create sizes
-		T = pow(2,8);
-  		// T = pow(2,p);
-  		n = pow(2,p);
+		// T = pow(2,8);
+  		T = pow(2,p);
+  		// n = pow(2,p);
+  		// T = 1024;
 		B = (n + (T *2 -1))/ T * 2;
 
 		if(B > 65535)
 			B = 65534;
-		std::cout << "B * T: " << B * T << std::endl;
-		std::cout << "N: " << n << std::endl;
-		std::cout << "POW: " << p << std::endl;
 		if( (B * T) < n)
 			std::cout << "fail" << std::endl;
 	  int *input, *output;
@@ -49,12 +47,6 @@ int main() {
 	  for (int i = 0; i < n; ++i) {
 	    input[i] = 1;
 	  }
-
-	  // int check = 0;
-	  // for(int i = 0; i < n; i++){
-	  // 	check += input[i];
-	  // }
-	  // std::cout << "sum should be: " << check << std::endl;
 
 	  // Create cuda Events
 	  cudaEvent_t start, end, m_start, m_end;
@@ -111,9 +103,10 @@ int main() {
 	  	exit(1);
 	  }
 	  
-	  std::cout << "Yay! Your program's results are correct." << std::endl;
-	  std::cout << "Your program took: " << memTransTime << " ms. With Memory Transfer." << std::endl;
-	  std::cout << "Your program took: " << calcTime << " ms. Without Memory Transfer." << std::endl;
+	  // std::cout << "Yay! Your program's results are correct." << std::endl;
+	  std::cout << std::endl;
+	  std::cout << "Your program took: " << memTransTime << " ms. With Memory Transfer on " << n << " inputs" << std::endl;
+	  std::cout << "Your program took: " << calcTime << " ms. Without Memory Transfer on" <<  n << " inputs" << std::endl;
 	  
 	  // Cleanup in the event of success.
 	  cudaEventDestroy( start );
@@ -127,9 +120,12 @@ int main() {
 	  double memThrough = n / memTransTime;
 	  double calcThrough = n / calcTime;
 	  // out << memThrough << ',' << calcThrough << ',' << T << ',' << B << '\n' ;
-	  out << memThrough << ',' << calcThrough << ',' << n << '\n' ;
-	  std::cout << memThrough << ',' << calcThrough << ',' << T << ',' << B << '\n' ;
-
+	  // out << memThrough << ',' << calcThrough << ',' << n << '\n' ;
+	  // std::cout << memThrough << ',' << calcThrough << ',' << T << ',' << B << '\n' ;
+	  // std::cout << std::endl;
+	  std::cout << "Throughput: " << memThrough << " ms. With Memory Transfer on " <<  n << " inputs" << std::endl;
+	  std::cout << "Throughput: " << calcThrough << " ms. Without Memory Transfer on " <<  n << " inputs" << std::endl;
+	  
 	  cudaFree(g_in);
 	  cudaFree(g_out);
 

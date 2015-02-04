@@ -1,7 +1,3 @@
-/*
-  This header demonstrates how we build cuda programs spanning
-  multiple files. 
- */
 
 #ifndef KERNEL_H_
 #define KERNEL_H_

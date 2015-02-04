@@ -1,14 +1,6 @@
 
 #include "kernel.h"
 
-/*
-  This is the function that each thread will execute on the GPU. The
-  fact that it executes on the device is indicated by the __global__
-  modifier in front of the return type of the function. After that,
-  the signature of the function isn't special - in particular, the
-  pointers we pass in should point to memory on the device, but this
-  is not indicated by the function's signature.
- */
 __global__ void reduce(int *in, int *out, int size) {
 
   // Create Shared Memory
