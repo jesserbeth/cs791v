@@ -13,12 +13,12 @@ int main() {
   // Define Complex Corners of Image
   int height = 2000;
   int width = 2000;
-  double MinRe = -2.0;
-  double MaxRe = 1.0;
-  double MinIm = -1.2;
-  double MaxIm = MinIm + (MaxRe-MinRe)*height/width;
-  double Re_factor = (MaxRe - MinRe)/(width - 1);
-  double Im_factor = (MaxIm - MinIm)/(height - 1);
+  float MinRe = -2.0;
+  float MaxRe = 1.0;
+  float MinIm = -1.2;
+  float MaxIm = MinIm + (MaxRe-MinRe)*height/width;
+  float Re_factor = (MaxRe - MinRe)/(width - 1);
+  float Im_factor = (MaxIm - MinIm)/(height - 1);
   int maxIterations = 1024;
   int **img = new int*[height];
   for(int i =0; i < height; i++){
@@ -50,14 +50,14 @@ int main() {
   // Map Complex Numbers to Pixels:
   gettimeofday(&start, NULL);
   for(unsigned y = 0; y < height; y++){
-  	double c_im = MaxIm - y*Im_factor;
+  	float c_im = MaxIm - y*Im_factor;
   	for(unsigned x=0; x<width; x++){
-  		double c_re = MinRe + x*Re_factor;
+  		float c_re = MinRe + x*Re_factor;
 
-  		double Z_re = c_re, Z_im = c_im;
+  		float Z_re = c_re, Z_im = c_im;
   		bool isInside = true;
   		for(unsigned n = 0; n<maxIterations; n++){
-  			double Z_re2 = Z_re*Z_re, Z_im2 = Z_im*Z_im;
+  			float Z_re2 = Z_re*Z_re, Z_im2 = Z_im*Z_im;
   			if(Z_re2 + Z_im2 > 4){
   				isInside = false;
   				break;

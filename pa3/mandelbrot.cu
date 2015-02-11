@@ -18,15 +18,17 @@ int main() {
 	float calcTime, memTime;
 
 	// Mandelbrot Variables
-	double MinRe = -2.0;
-	double MaxRe = 1.0;
-	double MinIm = -1.2;
-	double MaxIm = MinIm + (MaxRe-MinRe)*H/W;
+	float MinRe = -2.0;
+	float MaxRe = 1.0;
+	float MinIm = -1.2;
+	float MaxIm = MinIm + (MaxRe-MinRe)*H/W;
 	std::ofstream data_out("parallel_data.csv");
 
 	// For loop to generate plot data
 	for(int T = 64; T < 1025; T<<=1){
+	// for(int T = 64; T < 1025; T+=32){
 		B = ceil(P / T);
+		// B = P / T;
 
 		char numstr[21];
 		char threadNum[21];
@@ -101,22 +103,18 @@ int main() {
 		cudaEventDestroy( m_end );
 
 		// Write to file
-		data_out << memTime << ',' << calcTime << ',' << T << ',' << B << '\n' ;
+		data_out << memTime << ',' << "ms" << ',' << calcTime << ',' << "ms" << ',' << T << ',' << "threads" << ',' << B << ',' << "blocks" << '\n' ;
 
 		// Write to image:
 		im_out << "P2" << '\n';
 		im_out << "2000 2000" << '\n';
 		im_out << "255" << '\n';
 
-		for(int y = 0; y < W; y++){
-			for(int x = 0; x < H; x++){
-				im_out << img[y*W + x] << " ";
-				// std::cout << img[y*W + x] << " ";
-				if(img[y*W + x] == 0)
-					std::cout << "Zero\n";
+		for(int y = 0; y < H; y++){
+			for(int x = 0; x < W; x++){
+				im_out << img[y*H + x] << " ";
 			}
 			im_out << "\n";
-			// std::cout << "\n";
 		}
 	  
 		cudaFree(g_out);
