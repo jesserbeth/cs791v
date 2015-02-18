@@ -16,10 +16,17 @@ int main() {
   int check = 0;
   int result = 0;
   float calcTime, memTransTime;
+  char version;
   // std::ofstream out("ParVSSeq.csv");
   // std::ofstream out("test.csv");
 
   // Handle I/O from user
+  printf("Input program version (a, b, c):\na: Multiple cpu kernel calls\nb: Kernel calls kernel\nc: CPU finishes the sum\n");
+  scanf(" %c", &version);
+  if(version != 'a' && version != 'b' && version != 'c'){
+  	printf("Error: Invalid input.\n");
+  	return 0;
+  }
 
   // Input size for N, B and T
   printf("Input Size of N (0 < N < 10,000,000): ");
@@ -94,43 +101,85 @@ int main() {
 
 	  cudaEventRecord( m_start, 0 );
 
-	  // int s = B;
 		err = cudaMemcpy(g_out, output, B * sizeof(int), cudaMemcpyHostToDevice);
 	    err = cudaMemcpy(g_in, input, n * sizeof(int), cudaMemcpyHostToDevice);
 	    if (err != cudaSuccess) {
 	      std::cerr << "Error: " << cudaGetErrorString(err) << std::endl;
 	      exit(1);
 	    }  
-	  int s = n;
-	  // while( s > 1){
 
-	    cudaEventRecord(start,0);
-	  	reduce<<<B,T,T*sizeof(int)>>>(g_in, g_out, s);
+	  if(version == 'a'){
+		  int s = n;
+		  cudaEventRecord(start,0);	
+		  while( s > 1){
+
+		  	reduce<<<B,T,T*sizeof(int)>>>(g_in, g_out, s);
+		  	s = ceil(s / (T*2));
+		  	printf("%d\n", s);
+		  	if(s > B)
+		  		s = B;
+
+		  	// Swap pointers to loop
+		  	int *temp = g_in;
+		  	g_in = g_out;
+		  	g_out = temp;
+		  }
 		  cudaEventRecord(end, 0);
 		  cudaEventSynchronize(end);
 
-    	err = cudaMemcpy(output, g_out, B * sizeof(int), cudaMemcpyDeviceToHost);
-    	if (err != cudaSuccess) {
-    	  std::cerr << "Error: " << cudaGetErrorString(err) << std::endl;
-    	  exit(1);
-	  	}
+	    	err = cudaMemcpy(output, g_out, B * sizeof(int), cudaMemcpyDeviceToHost);
+	    	if (err != cudaSuccess) {
+	    	  std::cerr << "Error: " << cudaGetErrorString(err) << std::endl;
+	    	  exit(1);
+		  	}
+		  	std::cout << "output[0]" << output[0] << std::endl;
 
-    	// Calc new in/out sizes
+		  cudaEventElapsedTime( &calcTime, start, end );
+		  
+		  cudaEventRecord( m_end, 0 );
+		  cudaEventSynchronize( m_end );
+		  
+		  cudaEventElapsedTime( &memTransTime, m_start, m_end );
+	  }
+	  else if(version == 'b'){
+		  cudaEventRecord(start,0);	
+		  reduce<<<B,T,T*sizeof(int)>>>(g_in, g_out, n);
+		  cudaEventRecord(end, 0);
+		  cudaEventSynchronize(end);
+
+		  
+	    	err = cudaMemcpy(output, g_out, B * sizeof(int), cudaMemcpyDeviceToHost);
+	    	if (err != cudaSuccess) {
+	    	  std::cerr << "Error: " << cudaGetErrorString(err) << std::endl;
+	    	  exit(1);
+		  	}
+		  	std::cout << "output[0]" << output[0] << std::endl;
+
+		  result = 0;
+		  for(int i = 0; i < B; i++){
+		  	result += output[i];
+		  	std::cout << output[i] << std::endl;
+		  }
+		  cudaEventElapsedTime( &calcTime, start, end );
+		  
+		  cudaEventRecord( m_end, 0 );
+		  cudaEventSynchronize( m_end );
+		  
+		  cudaEventElapsedTime( &memTransTime, m_start, m_end );
+	  }
+	  else{
+	  	// Recursive Kernel
+	  	int blah = 0;
+	  }
 
 
-	  // }
 
 
-	  cudaEventElapsedTime( &calcTime, start, end );
-	  
-	  cudaEventRecord( m_end, 0 );
-	  cudaEventSynchronize( m_end );
-	  
-	  cudaEventElapsedTime( &memTransTime, m_start, m_end );
-
+	  // Correctness check
 	  result = 0;
 	  for(int i = 0; i < B; i++){
 	  	result += output[i];
+	  	std::cout << output[i] << std::endl;
 	  }
 	  check = 0;
 	  for(int i = 0; i < n; i++){
