@@ -9,17 +9,17 @@ __global__ void reduce(int *in, int *out, int size) {
   int tid = threadIdx.x;
   int index = blockIdx.x*blockDim.x*2 + threadIdx.x;
   int acc = 0;
+
+  // Here is where striding is accomplished
   while(index < size){
     if( index < size){
       acc += in[index];
     }
     // First level reduction: Read from global into shared memory
-    // index += blockDim.x * gridDim.x;
     if(index + blockDim.x < size){
       acc += in[index+blockDim.x];
-      // acc += in[index];
     }
-    index += blockDim.x * gridDim.x *2;
+    index += blockDim.x * gridDim.x;
   }
 
     memPnt[tid] = acc;
@@ -27,7 +27,6 @@ __global__ void reduce(int *in, int *out, int size) {
 
   for(int j=blockDim.x/2; j > 0; j>>=1){
     if(tid < j){
-      // acc += memPnt[tid + j];
       memPnt[tid] = acc = acc + memPnt[tid + j];
     }
 
@@ -36,6 +35,4 @@ __global__ void reduce(int *in, int *out, int size) {
   if(tid == 0)
     out[blockIdx.x] = acc;
 
-  // _threadfence();
-  // size = blockDim.x;
 }
