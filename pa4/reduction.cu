@@ -130,15 +130,15 @@ int main() {
 		  	// s = 0;
 		  	// count++;
 
-	    // 	err = cudaMemcpy(output, g_in, B * sizeof(int), cudaMemcpyDeviceToHost);
-	    // 	if (err != cudaSuccess) {
-	    // 	  std::cerr << "Out Copy Error: " << cudaGetErrorString(err) << std::endl;
-	    // 	  exit(1);
-		  	// }
-		  	// 	std::cout << "OUTPUT VECTOR: " << std::endl;
-		  	// for(int i = 0; i < B; i++){
-		  	// 	std::cout << output[i] << std::endl;
-		  	// }
+	    	err = cudaMemcpy(output, g_in, B * sizeof(int), cudaMemcpyDeviceToHost);
+	    	if (err != cudaSuccess) {
+	    	  std::cerr << "Out Copy Error: " << cudaGetErrorString(err) << std::endl;
+	    	  exit(1);
+		  	}
+		  		std::cout << "OUTPUT VECTOR: " << std::endl;
+		  	for(int i = 0; i < B; i++){
+		  		std::cout << output[i] << std::endl;
+		  	}
 		  }
 		  cudaEventRecord(end, 0);
 		  cudaEventSynchronize(end);
@@ -194,11 +194,39 @@ int main() {
 		  	std::cout << output[i] << std::endl;
 		  }
 	  }
-	  else{
+	  else if(version == 'b'){
 	  	// Recursive Kernel
-	  	int blah = 0;
-	  	if(blah == 0)
-	  		blah = 5;
+		  cudaEventRecord(start,0);	
+		  rReduce<<<B,T,memorySize*sizeof(int)>>>(g_in, g_out, n);
+		  cudaEventRecord(end, 0);
+		  cudaEventSynchronize(end);
+
+
+		  err = cudaMemcpy(output, g_in, B * sizeof(int), cudaMemcpyDeviceToHost);
+	    	if (err != cudaSuccess) {
+	    	  std::cerr << "Out Copy Error: " << cudaGetErrorString(err) << std::endl;
+	    	  exit(1);
+		  	}
+		  	// std::cout << "output[0]" << output[0] << std::endl;
+
+		  result = 0;
+		  for(int i = 0; i < B; i++){
+		  	result += output[i]; 
+		  	// std::cout << output[i] << std::endl;
+		  }
+		  cudaEventElapsedTime( &calcTime, start, end );
+		  
+		  cudaEventRecord( m_end, 0 );
+		  cudaEventSynchronize( m_end );
+		  
+		  cudaEventElapsedTime( &memTransTime, m_start, m_end );
+
+		  // Correctness check
+		  // Store result to variable
+		  result = output[0] + output[1];
+		  // result = output[0];
+		  for(int i = 0; i < B; i++)
+		  	std::cout << "output: " << output[i] << '\n';
 	  }
 
 		  // result = 0;
