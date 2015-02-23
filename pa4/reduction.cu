@@ -113,7 +113,7 @@ int main() {
 		  while( s > 1){
 		    std::cout << "S IS: " << s << std::endl;
 		  	// Call Kernel:
-		  	reduce<<<B,T,memorySize*sizeof(int)>>>(g_in, g_out, s);
+		  	reduce<<<B,T,B*T*sizeof(int)>>>(g_in, g_out, s);
 		  	
 		  	// Adjust new processing size:
 		  	s = ceil(s / (T*2));

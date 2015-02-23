@@ -7,9 +7,9 @@
 
 all: reduction
 
-reduction: reduction.cu kernel.cu
+reduction: data_generation.cu kernel.cu
 #	nvcc -ccbin=/home/richard/bin/ $^ -o $@
-	#nvcc $^ -o $@
+	# nvcc $^ -o $@
 	nvcc $^ -arch=sm_35 -rdc=true -o $@ -lcudadevrt
 
 clean:
