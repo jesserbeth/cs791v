@@ -8,9 +8,10 @@ int main() {
   int n;
   std::ofstream out("seq.csv");
 
-  for(int p = 18; p < 24; p++){
+  for(int n = 1000000; n <= 110000000; n += 20000000){
+  // for(int p = 18; p < 24; p++){
 
-  	  n = pow(2,p);
+  	  // n = pow(2,p);
   	  struct timeval start, fin;
   	  int *a;
   	  int count = 0;
@@ -29,9 +30,9 @@ int main() {
 	  double t = fin.tv_usec + fin.tv_sec * 1000000.0;
 	  t -= start.tv_usec + start.tv_sec * 1000000.0;
 	  t /= 1000000.0;
-	  std::cout << "Processing " << n << " inputs took " << t << " microseconds" << std::endl;
-	  t /= .001;
-	  out << t << ',' << n << std::endl;
+	  std::cout << "Processing " << n << " inputs took " << t << " seconds" << std::endl;
+	  // t /= .001;
+	  out << t << "seconds" << ',' << (n*sizeof(int)*pow(10,-9)) << "Gb/s" << '\n';
 	  /*
 	    Let's check that the results are what we expect.
 	   */
