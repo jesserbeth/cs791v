@@ -1,7 +1,7 @@
 all: fireSim
 
-fireSim: simulation.cpp
-	gcc simulation.cpp firelib-1.0.1/lib/libfire.a
+fireSim: simulation.cpp fireSim.h fireSim.cpp
+	g++ -o fireSim simulation.cpp fireSim.h fireSim.cpp
 
 clean:
 	rm -f *.o

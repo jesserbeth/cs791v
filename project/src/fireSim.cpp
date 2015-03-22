@@ -17,6 +17,7 @@ fireSim::fireSim(){
    simDimY = sizeY;
 
    timeOfArrival = new float*[simDimX];
+   fuelTexture = new float*[simDimX];
    originalTimeOfArrival = new float*[simDimX];
    orthoSpreadRate = new vec4*[simDimX];
    diagSpreadRate = new vec4*[simDimX];
@@ -34,6 +35,7 @@ fireSim::fireSim(){
 
    for(int i = 0; i < simDimX; i++){
       timeOfArrival[i] = new float[simDimY];
+      fuelTexture[i] = new float[simDimY];
       originalTimeOfArrival[i] = new float[simDimY];
       orthoSpreadRate[i] = new vec4[simDimY];
       diagSpreadRate[i] = new vec4[simDimY];
@@ -88,6 +90,7 @@ void fireSim::init(){
    for(int i = 0; i < simDimX; i++){
       for(int j = 0; j < simDimY; j++){
          timeOfArrival[i][j] = 20.;
+         fuelTexture[i][j] = 20.;
          originalTimeOfArrival[i][j] = 20.;
          orthoSpreadRate[i][j].x = orthoSpreadRate[i][j].y = orthoSpreadRate[i][j].z = orthoSpreadRate[i][j].w = 1.;
          diagSpreadRate[i][j].x = diagSpreadRate[i][j].y = diagSpreadRate[i][j].z = diagSpreadRate[i][j].w = 1.;
@@ -115,7 +118,16 @@ Shader base: rothermel
 Purpose: This runs rothermel's equations to initialize simulation
 */
 void fireSim::updateSpreadData(){
-
+   // This is where rothermel's shader is implemented
+   
+   for(int i = 0; i < simDimX; i++){
+      for(int j = 0; j < simDimY; j++){
+         // Shader code: int fuelModel = texture2D(fuelTexture, gl_TexCoord[1].st).r;
+            // gl_TexCoord[1].st corresponds to fuelTexture.xy
+         int fuelModel = fuelTexture[i][j];
+      }
+   }
+   
 }
 
 /*
@@ -485,7 +497,7 @@ void fireSim::propagateFire(){
             orthoSpreadRate[i][j].w = currentOrthoRates[3];
 
             timeStamp = currentStamp;
-            sourceDataTexture[i][j].x = 
+            sourceDataTexture[i][j].x = newRate;
 
       }
    }
@@ -519,6 +531,7 @@ Purpose: Step time through simulation
 void fireSim::triggerNextEvent(){
 
 }
+
 
 /*//////////////////////////////////////////////////////////////////
                      Support Functions
