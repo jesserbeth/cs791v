@@ -2,6 +2,9 @@
 #include <algorithm>
 #include <math.h>
 
+/* neighbor's address*/     /* N  NE   E  SE   S  SW   W  NW */
+static int nCol[8] =        {  0,  1,  1,  1,  0, -1, -1, -1};
+static int nRow[8] =        {  1,  1,  0, -1, -1, -1,  0,  1};
 
 /*
 Constructor: builds simplest test case for testing code
@@ -17,6 +20,7 @@ fireSim::fireSim(){
    simDimY = sizeY;
 
    timeOfArrival = new float*[simDimX];
+   rothData = new vec4*[simDimX];
    fuelTexture = new float*[simDimX];
    originalTimeOfArrival = new float*[simDimX];
    orthoSpreadRate = new vec4*[simDimX];
@@ -33,8 +37,29 @@ fireSim::fireSim(){
    canopyHeight = new float*[simDimX];
    spreadData = new float*[simDimX];
 
+   // rothermel vals
+   fuelTexture = new float*[simDimX];
+   deadSAVBurnableBuffer = new vec4*[simDimX];
+   dead1hBuffer = new vec4*[simDimX];
+   dead10hBuffer = new vec4*[simDimX];
+   dead100hBuffer = new vec4*[simDimX];
+   liveHBuffer = new vec4*[simDimX];
+   liveWBuffer = new vec4*[simDimX];
+   fineDeadExctinctionsDensityBuffer = new vec4*[simDimX];
+   areasReactionFactorsBuffer = new vec4*[simDimX];
+   slopeWindFactorsBuffer = new vec4*[simDimX];
+   residenceFluxLiveSAVBuffer = new vec4*[simDimX];
+   fuelSAVAccelBuffer = new vec2*[simDimX];
+   slopeAspectElevationBuffer = new vec3*[simDimX];
+   windTexture = new vec2*[simDimX];
+   deadMoisturesTexture = new vec3*[simDimX];
+   liveMoisturesTexture = new vec2*[simDimX];
+
+
    for(int i = 0; i < simDimX; i++){
       timeOfArrival[i] = new float[simDimY];
+      rothData[i] = new vec4[simDimY];
+      deadSAVBurnableBuffer[i] = new vec4[simDimY];
       fuelTexture[i] = new float[simDimY];
       originalTimeOfArrival[i] = new float[simDimY];
       orthoSpreadRate[i] = new vec4[simDimY];
@@ -50,6 +75,23 @@ fireSim::fireSim(){
       crownActiveRate[i] = new float[simDimY];
       canopyHeight[i] = new float[simDimY];
       spreadData[i] = new float[simDimY];
+
+      // rothermel
+      fuelTexture[i] = new float[simDimY];
+      dead1hBuffer[i] = new vec4[simDimY];
+      dead10hBuffer[i] = new vec4[simDimY];
+      dead100hBuffer[i] = new vec4[simDimY];
+      liveHBuffer[i] = new vec4[simDimY];
+      liveWBuffer[i] = new vec4[simDimY];
+      fineDeadExctinctionsDensityBuffer[i] = new vec4[simDimY];
+      areasReactionFactorsBuffer[i] = new vec4[simDimY];
+      slopeWindFactorsBuffer[i] = new vec4[simDimY];
+      residenceFluxLiveSAVBuffer[i] = new vec4[simDimY];
+      fuelSAVAccelBuffer[i] = new vec2[simDimY];
+      slopeAspectElevationBuffer[i] = new vec3[simDimY];
+      windTexture[i] = new vec2[simDimY];
+      deadMoisturesTexture[i] = new vec3[simDimY];
+      liveMoisturesTexture[i] = new vec2[simDimY];
    }
 
    startTime = 0.; 
@@ -90,7 +132,8 @@ void fireSim::init(){
    for(int i = 0; i < simDimX; i++){
       for(int j = 0; j < simDimY; j++){
          timeOfArrival[i][j] = 20.;
-         fuelTexture[i][j] = 20.;
+         rothData[i][j].x = rothData[i][j].y = rothData[i][j].z = 0.;
+         fuelTexture[i][j] = 151.;
          originalTimeOfArrival[i][j] = 20.;
          orthoSpreadRate[i][j].x = orthoSpreadRate[i][j].y = orthoSpreadRate[i][j].z = orthoSpreadRate[i][j].w = 1.;
          diagSpreadRate[i][j].x = diagSpreadRate[i][j].y = diagSpreadRate[i][j].z = diagSpreadRate[i][j].w = 1.;
@@ -105,6 +148,26 @@ void fireSim::init(){
          crownActiveRate[i][j] = 100000.;
          canopyHeight[i][j] = 0.;
          spreadData[i][j] = 0.;
+
+         // Rothermel Data Members
+         fuelTexture[i][j] = 100.;
+         deadSAVBurnableBuffer[i][j].x = deadSAVBurnableBuffer[i][j].y = deadSAVBurnableBuffer[i][j].z = deadSAVBurnableBuffer[i][j].w = 200.;
+   // cout << ";klajdfjkl;" << endl;
+         dead1hBuffer[i][j].x = dead1hBuffer[i][j].y = dead1hBuffer[i][j].z = dead1hBuffer[i][j].z = 1.;
+         dead10hBuffer[i][j].x = dead10hBuffer[i][j].y = dead10hBuffer[i][j].z = dead10hBuffer[i][j].w = 1.;
+         dead100hBuffer[i][j].x = dead100hBuffer[i][j].y = dead100hBuffer[i][j].z = dead100hBuffer[i][j].w = 1.;
+         liveHBuffer[i][j].x = liveHBuffer[i][j].y = liveHBuffer[i][j].z = liveHBuffer[i][j].w = 1.;
+         liveWBuffer[i][j].x = liveWBuffer[i][j].y = liveWBuffer[i][j].z = liveWBuffer[i][j].w = 1.;
+         fineDeadExctinctionsDensityBuffer[i][j].x = fineDeadExctinctionsDensityBuffer[i][j].y = fineDeadExctinctionsDensityBuffer[i][j].z = fineDeadExctinctionsDensityBuffer[i][j].w = 1.;
+         areasReactionFactorsBuffer[i][j].x = areasReactionFactorsBuffer[i][j].y = areasReactionFactorsBuffer[i][j].z = areasReactionFactorsBuffer[i][j].w = 1.;
+         slopeWindFactorsBuffer[i][j].x = slopeWindFactorsBuffer[i][j].y = slopeWindFactorsBuffer[i][j].z = slopeWindFactorsBuffer[i][j].w = 1.;
+         residenceFluxLiveSAVBuffer[i][j].x = residenceFluxLiveSAVBuffer[i][j].y = residenceFluxLiveSAVBuffer[i][j].z = residenceFluxLiveSAVBuffer[i][j].w = 1.;
+         fuelSAVAccelBuffer[i][j].x = fuelSAVAccelBuffer[i][j].y = 1.;
+         slopeAspectElevationBuffer[i][j].x = slopeAspectElevationBuffer[i][j].y = slopeAspectElevationBuffer[i][j].z = 1.;
+         windTexture[i][j].x = windTexture[i][j].y = 1.;
+         deadMoisturesTexture[i][j].x = deadMoisturesTexture[i][j].y = deadMoisturesTexture[i][j].z = 1.;
+         liveMoisturesTexture[i][j].x = liveMoisturesTexture[i][j].y = 1.;
+         // cout << "test" << endl;
       }
    }
    spreadData[5][5] = 100;
@@ -119,12 +182,272 @@ Purpose: This runs rothermel's equations to initialize simulation
 */
 void fireSim::updateSpreadData(){
    // This is where rothermel's shader is implemented
+   int    nrow, ncol, ncell;   /* row, col, and index of neighbor cell */
+   float dist = 10.;
    
    for(int i = 0; i < simDimX; i++){
       for(int j = 0; j < simDimY; j++){
          // Shader code: int fuelModel = texture2D(fuelTexture, gl_TexCoord[1].st).r;
             // gl_TexCoord[1].st corresponds to fuelTexture.xy
          int fuelModel = fuelTexture[i][j];
+         vec4 dead1h, deadSAVBurnable, dead10h, dead100h, liveH, liveW, fineDeadExtinctionsDensity, areasReactionFactors,
+              slopeWindFactors, residenceFluxLiveSAV;
+         vec2 fuelSAVAccel;
+
+         vec3 slopeAspectElevation;
+         vec2 wind;
+         vec3 deadMoistures;
+         vec2 liveMoistures;
+
+         float maxSpreadRate = 0.0;
+         float ellipseEccentricity = 0.0;
+         float spreadDirection = 0.0;
+         float spreadModifier = 0.0;
+         vec3 timeLagClass;
+
+         // Get data into vars
+         deadSAVBurnable = deadSAVBurnableBuffer[i][j];
+         if(deadSAVBurnable.w < 50.0){
+            continue;
+         }
+
+         dead1h = dead1hBuffer[i][j];
+         dead10h = dead10hBuffer[i][j];
+         dead100h = dead100hBuffer[i][j];
+         liveH = liveHBuffer[i][j];
+         liveW = liveWBuffer[i][j];
+         fineDeadExtinctionsDensity = fineDeadExctinctionsDensityBuffer[i][j];
+         areasReactionFactors = areasReactionFactorsBuffer[i][j];
+         slopeWindFactors = slopeWindFactorsBuffer[i][j];
+         residenceFluxLiveSAV = residenceFluxLiveSAVBuffer[i][j];
+         fuelSAVAccel = fuelSAVAccelBuffer[i][j];
+         float fuelSAV = fuelSAVAccel.x;
+         float accelerationConstant = fuelSAVAccel.y;
+
+         slopeAspectElevation = slopeAspectElevationBuffer[i][j];
+         wind = windTexture[i][j];
+         deadMoistures = deadMoisturesTexture[i][j];
+         liveMoistures = liveMoisturesTexture[i][j];
+
+
+         if (deadSAVBurnable.x > 192.0)
+            timeLagClass.x = deadMoistures.x;
+         else if (deadSAVBurnable.x > 48.0)
+            timeLagClass.x = deadMoistures.y;
+         else
+            timeLagClass.x = deadMoistures.z;
+
+         if (deadSAVBurnable.y > 192.0)
+            timeLagClass.y = deadMoistures.x;
+         else if (deadSAVBurnable.y > 48.0)
+            timeLagClass.y = deadMoistures.y;
+         else
+            timeLagClass.y = deadMoistures.z;
+
+         if (deadSAVBurnable.z > 192.0)
+            timeLagClass.z = deadMoistures.x;
+         else if (deadSAVBurnable.z > 48.0)
+            timeLagClass.z = deadMoistures.y;
+         else
+            timeLagClass.z = deadMoistures.z;
+
+         float weightedFuelModel = 
+            timeLagClass.x * dead1h.x * dead1h.y +
+            timeLagClass.y * dead10h.x * dead10h.y +
+            timeLagClass.z * dead100h.x * dead100h.y;
+
+         float fuelMoistures[5];
+         fuelMoistures[0] = timeLagClass.x;
+         fuelMoistures[1] = timeLagClass.y;
+         fuelMoistures[2] = timeLagClass.z;
+         fuelMoistures[3] = liveMoistures.x;
+         fuelMoistures[4] = liveMoistures.y;
+
+         float liveExtinction = 0.0;
+         if(liveH.y > 0.0 || liveW.y > 0.0){
+            float fineDeadMoisture = 0.0;
+            if (fineDeadExtinctionsDensity.x > 0.0)
+               fineDeadMoisture = weightedFuelModel / fineDeadExtinctionsDensity.x;
+
+            liveExtinction =
+               (fineDeadExtinctionsDensity.z * 
+                (1.0 - fineDeadMoisture / fineDeadExtinctionsDensity.y)) - 0.226;
+            liveExtinction = max(liveExtinction, fineDeadExtinctionsDensity.y);
+         }
+         
+         float heatOfIgnition =
+            areasReactionFactors.x *
+               ((250.0 + 1116.0 * fuelMoistures[0]) * dead1h.z * dead1h.x +
+                (250.0 + 1116.0 * fuelMoistures[1]) * dead10h.z * dead10h.x +
+                (250.0 + 1116.0 * fuelMoistures[2]) * dead100h.z * dead100h.x) +
+            areasReactionFactors.y *
+               ((250.0 + 1116.0 * fuelMoistures[3]) * liveH.z * liveH.x +
+                (250.0 + 1116.0 * fuelMoistures[4]) * liveW.z * liveW.x);
+         heatOfIgnition *= fineDeadExtinctionsDensity.w;
+
+         float liveMoisture = liveH.z * fuelMoistures[3] + liveW.z * fuelMoistures[4];
+         float deadMoisture = dead1h.z * fuelMoistures[0] + 
+                              dead10h.z * fuelMoistures[1] + 
+                              dead100h.z * fuelMoistures[2];
+
+         float reactionIntensity = 0.0;
+
+         if (liveExtinction > 0.0)
+            {
+               float r = liveMoisture / liveExtinction;
+               if (r < 1.0)
+                  reactionIntensity += areasReactionFactors.w * (1.0 - 
+                                                                 (2.59 * r) + 
+                                                                 (5.11 * r * r) - 
+                                                      (3.52 * r * r * r));
+            }
+            if (fineDeadExtinctionsDensity.y > 0.0)
+            {
+               float r = deadMoisture / fineDeadExtinctionsDensity.y;
+               if (r < 1.0)
+                  reactionIntensity += areasReactionFactors.z * (1.0 - 
+                                                                 (2.59 * r) + 
+                                                                 (5.11 * r * r) - 
+                                                      (3.52 * r * r * r));
+            }
+
+            float heatPerUnitArea = reactionIntensity * residenceFluxLiveSAV.x;
+            float baseSpreadRate = 0.0;
+            if (heatOfIgnition > 0.0)
+               baseSpreadRate = reactionIntensity * residenceFluxLiveSAV.y / heatOfIgnition;
+            
+            float slopeFactor = slopeWindFactors.x * slopeAspectElevation.x * slopeAspectElevation.x;
+            float windFactor = 0.0;
+            if (wind.x > 0.0)
+               windFactor = slopeWindFactors.y * pow(wind.x, slopeWindFactors.z);
+
+            spreadModifier = slopeFactor + windFactor;
+            
+            float upslope;
+            if (slopeAspectElevation.y >= 180.0)
+               upslope = slopeAspectElevation.y - 180.0;
+            else
+               upslope = slopeAspectElevation.y + 180.0;
+
+            int checkEffectiveWindspeed = 0;
+            int updateEffectiveWindspeed = 0;
+            float effectiveWindspeed = 0.0;
+            if (baseSpreadRate <= 0.0)
+            {
+               maxSpreadRate = 0.0;
+               spreadDirection = 0.0;
+            }
+            else if (spreadModifier <= 0.0)
+            {
+               maxSpreadRate = baseSpreadRate;
+               spreadDirection = 0.0;
+            }
+            else if (slopeAspectElevation.x <= 0.0)
+            {
+               effectiveWindspeed = wind.x;
+               maxSpreadRate = baseSpreadRate * (1.0 + spreadModifier);
+               spreadDirection = wind.y;
+               checkEffectiveWindspeed = 1;
+            }
+            else if (wind.x <= 0.0)
+            {
+               maxSpreadRate = baseSpreadRate * (1.0 + spreadModifier);
+               spreadDirection = upslope;
+               updateEffectiveWindspeed = 1;
+               checkEffectiveWindspeed = 1;
+            }
+            else if (fabs(wind.y - upslope) < 0.000001)
+            {
+               maxSpreadRate = baseSpreadRate * (1.0 + spreadModifier);
+               spreadDirection = upslope;
+               updateEffectiveWindspeed = 1;
+               checkEffectiveWindspeed = 1;
+            }
+            else
+            {
+               float angleDelta;
+               if (upslope <= wind.y)
+                  angleDelta = wind.y - upslope;
+               else
+                  angleDelta = 360.0 - upslope + wind.y;
+               angleDelta *= 3.14159 / 180.0;
+               float slopeRate = baseSpreadRate * slopeFactor;
+               float windRate = baseSpreadRate * windFactor;
+               float x = slopeRate + windRate * cos(angleDelta);
+               float y = windRate * sin(angleDelta);
+               float addedSpeed = sqrt(x * x + y * y);
+               maxSpreadRate = baseSpreadRate + addedSpeed;
+
+               spreadModifier = maxSpreadRate / baseSpreadRate - 1.0;
+               if (spreadModifier > 0.0)
+                  updateEffectiveWindspeed = 1;
+               checkEffectiveWindspeed = 1;
+
+               float addedAngle = 0.0;
+               if (addedSpeed > 0.0)
+                  addedAngle = asin(clamp(fabs(y) / addedSpeed, -1.0, 1.0));
+               float angleOffset = 0.0;
+               if (x >= 0.0)
+               {
+                  if (y >= 0.0)
+                     angleOffset = addedAngle;
+                  else
+                     angleOffset = 2.0 * 3.14159 - addedAngle;
+               }
+               else
+               {
+                  if (y >= 0.0)
+                     angleOffset = 3.14159 + addedAngle;
+                  else
+                     angleOffset = 3.14159 - angleOffset;
+               }
+               spreadDirection = upslope + angleOffset * 180.0 / 3.14159;
+               if (spreadDirection > 360.0)
+                  spreadDirection -= 360.0;
+            }
+
+            if (updateEffectiveWindspeed == 1)
+            {
+               effectiveWindspeed = pow((spreadModifier * slopeWindFactors.w), (1.0 / slopeWindFactors.z));
+            }
+            if (checkEffectiveWindspeed == 1)
+            {
+               float maxWind = 0.9 * reactionIntensity;
+               if (effectiveWindspeed > maxWind)
+               {
+                  if (maxWind <= 0.0)
+                     spreadModifier = 0.0;
+                  else
+                     spreadModifier = slopeWindFactors.y * pow(maxWind, slopeWindFactors.z);
+                  maxSpreadRate = baseSpreadRate * (1.0 + spreadModifier);
+                  effectiveWindspeed = maxWind;
+               }
+            }
+            ellipseEccentricity = 0.0;
+            if (effectiveWindspeed > 0.0)
+            {
+               float lengthWidthRatio = 1.0 + 0.002840909 * effectiveWindspeed;
+               ellipseEccentricity = sqrt(lengthWidthRatio * lengthWidthRatio - 1.0) / lengthWidthRatio;
+            }
+            //maxSpreadRate = maxSpreadRate * (1.0 - exp(-accelerationConstant * burnTime / 60.0));
+            //float firelineIntensity = 
+            // 3.4613 * (384.0 * (reactionIntensity / 0.189275)) * 
+            //    (maxSpreadRate * 0.30480060960) / (60.0 * fuelSAV);
+            //firelineIntensity =
+            // reactionIntensity * 12.6 * maxSpreadRate / (60.0 * fuelSAV);
+            float intensityModifier =
+               3.4613 * (384.0 * (reactionIntensity / 0.189275)) *
+                  (0.30480060960) / (60.0 * fuelSAV);
+            // gl_FragData[0] = vec4(maxSpreadRate, 
+            //                       ellipseEccentricity, spreadDirection, intensityModifier);
+
+            rothData[i][j].x = maxSpreadRate;
+            cout << maxSpreadRate;
+            rothData[i][j].y = spreadDirection;
+            cout << spreadDirection;
+            rothData[i][j].z = ellipseEccentricity;
+            cout << ellipseEccentricity << endl;
+
       }
    }
    
@@ -617,4 +940,19 @@ float fireSim::testCrownRate(float spreadRate,
 
    }
    return maxRate * 3.28 / 60.0;
+}
+
+/*
+Function: testCrownRate
+Input: TBD
+Purpose: tests crown rate in each update step
+*/
+float fireSim::clamp(float val, float flr, float ceiling){
+   if(val >= flr && val <= ceiling){
+      return val;
+   }
+   if(val < flr){
+      return flr;
+   }
+   return ceiling;
 }

@@ -19,7 +19,8 @@ int main(){
       // UpdateCorruptedData()
 
       // sim.propogateFire(startTime, stepTime)
-      sim.propagateFire();
+      // sim.propagateFire();
+      sim.updateSpreadData();
       // BurnDistances(startTime, stepTime)
 
       // Accelerate(startTime, stepTime)
@@ -32,15 +33,17 @@ int main(){
 
    for(int i = 0; i < 10; i++){
       for(int j =0;j<10;j++){
-         std::cout << sim.orthoSpreadRate[i][j].x << ", ";
-         std::cout << sim.orthoSpreadRate[i][j].y << ", ";
-         std::cout << sim.orthoSpreadRate[i][j].z << ", ";
-         std::cout << sim.orthoSpreadRate[i][j].w << ", ";
-         std::cout << sim.diagSpreadRate[i][j].x << ", ";
-         std::cout << sim.diagSpreadRate[i][j].y << ", ";
-         std::cout << sim.diagSpreadRate[i][j].z << ", ";
-         std::cout << sim.diagSpreadRate[i][j].w << ", ";
+         // std::cout << sim.orthoSpreadRate[i][j].x << ", ";
+         // std::cout << sim.orthoSpreadRate[i][j].y << ", ";
+         // std::cout << sim.orthoSpreadRate[i][j].z << ", ";
+         // std::cout << sim.orthoSpreadRate[i][j].w << ", ";
+         // std::cout << sim.diagSpreadRate[i][j].x << ", ";
+         // std::cout << sim.diagSpreadRate[i][j].y << ", ";
+         // std::cout << sim.diagSpreadRate[i][j].z << ", ";
+         // std::cout << sim.diagSpreadRate[i][j].w << ", ";
          // std::cout << sim.timeOfArrival[i][j] << ", ";
+         std::cout << sim.rothData[i][j].x << ", " <<sim.rothData[i][j].y << ", " <<sim.rothData[i][j].z << ", ";
+
       }
       std::cout<<std::endl;
    }
