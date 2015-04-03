@@ -172,11 +172,50 @@ void fireSim::init(){
    }
    spreadData[5][5] = 100;
    // cout << "HERE" << endl;
+
 }
 
 /*
+   NOTES FOR HOW I GOT THE DATA D: (PLEASE LET THIS BE RIGHT)
+      Data I need                   Place I get it          (how it is produced)
+      deadXh, liveX:                effectiveHeatingNumber  (calculated in fuelmodel)
+                                    load                    (from .fmd)
+                                    areaWeightingFactor     (calculated in fuelmodel)
+                                    FuelMoisture            (all zeros)
+      
+      fineDeadExctinctionDensity:   fineDeadRatio           (calculated in fuelmodel)
+                                    extinctionMoisture      (from .fmd)
+                                    liveExtinction          (calculated in fuelmodel)
+                                    fuelDensity             (calculated in fuelmodel)
+
+      areasReactionFactors:         deadArea                (calculated in fuelmodel)
+                                    liveArea                (calculated in fuelmodel)
+                                    deadReactionFactor      (calculated in fuelmodel)
+                                    liveReactionFactor      (calculated in fuelmodel)
+
+      slopeWindFactors:             slopeK                  (calculated in fuelmodel)
+                                    windK                   (calculated in fuelmodel)
+                                    windB                   (calculated in fuelmodel)
+                                    windE                   (calculated in fuelmodel)
+
+      residenceFluxLiveSAV:         residenceTime           (calculated in fuelmodel)
+                                    propagatingFlux         (calculated in fuelmodel)
+                                    SAV                     (from .fmd)
+                                    SAV                     (from .fmd)
+
+      deadSAVBurnable:              SAV                     (from .fmd)
+                                    SAV                     (from .fmd)
+                                    SAV                     (from .fmd)
+                                    burnable                (always true)           
+
+      fuelSAVAccel:                 fuelSAV                 (calculated in fuelmodel)
+                                    accelerationConstant    (0.115)
+*/
+
+/*
 Function: updateSpreadData
-Input: TBD
+Input: The necessary inputs are the values that are found in the textures/buffers
+       in the FuelModel.h/Simulator.cpp files in Roger's code
 Shader base: rothermel
 Purpose: This runs rothermel's equations to initialize simulation
 */
@@ -190,7 +229,8 @@ void fireSim::updateSpreadData(){
          // Shader code: int fuelModel = texture2D(fuelTexture, gl_TexCoord[1].st).r;
             // gl_TexCoord[1].st corresponds to fuelTexture.xy
          int fuelModel = fuelTexture[i][j];
-         vec4 dead1h, deadSAVBurnable, dead10h, dead100h, liveH, liveW, fineDeadExtinctionsDensity, areasReactionFactors,
+         vec4 dead1h, deadSAVBurnable, dead10h, dead100h, liveH, 
+              liveW, fineDeadExtinctionsDensity, areasReactionFactors,
               slopeWindFactors, residenceFluxLiveSAV;
          vec2 fuelSAVAccel;
 

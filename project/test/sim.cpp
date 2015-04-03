@@ -24,8 +24,8 @@ int main(){
     fout.open("test.csv");
     // int totalTime = 100;
     float timeStep = .5;
-    int Rows = 100;
-    int Cols = 100;
+    int Rows = 10000;
+    int Cols = 10000;
     int CELLS = Rows * Cols;
     // int ignMap[CELLS];
     // int ignMapStep[CELLS];
@@ -152,69 +152,21 @@ int main(){
     int counter = 0;
 
 
-    // while(timeNext < INF && counter < 200000){
-    //     timeNow = timeNext;
-    //     timeNext = INF;
-    //     counter++;
-
-    //     // Loop through all cells
-    //     // for(cell = 0; cell < CELLS; cell++){
-    //     for ( cell=0, row=0; row<Rows; row++ ){
-    //         for ( col=0; col<Cols; col++, cell++ ){
-    //             if(timeNext > ignTime[cell] && ignTime[cell] > timeNow){
-    //                 timeNext = ignTime[cell];
-    //             }
-    //             else if( ignTime[cell] == timeNow){
-    //                 // for(int n = 0; n < 16; n++){
-    //                 for(int n = 0; n < 8; n++){
-    //                     // find neighbor cell index
-    //                     nrow = row + nRow[n];
-    //                     ncol = col + nCol[n];
-    //                     // std::cout << row << ' ' << col << ' ' << std::endl;
-    //                     if ( nrow<0 || nrow>= Rows || ncol<0 || ncol>=  Cols )
-    //                         continue;
-    //                     ncell = ncol + nrow*Cols;
-
-    //                     // If neighbor is unburned
-    //                     if(ignTime[ncell] > timeNow){
-    //                         // compute ignition time
-    //                         // ROS = blah blah
-    //                         ROS = .4 * (1.0 - .6)/(1 - .6 * cos(angle[n]));
-
-    //                         float ignTimeNew = timeNow + L_n[n] / ROS;
-
-    //                         if(ignTimeNew < ignTime[ncell]){
-    //                             ignTime[ncell] = ignTimeNew;
-    //                         }
-    //                         if(ignTimeNew < timeNext){
-    //                             timeNext = ignTimeNew;
-    //                         }
-    //                     }
-    //                 }
-    //             }
-    //         }
-    //     }
-    // }
-
-
-    ///////////////////////////////////////////////////////////////////////////////////////////
-    //                              Iterative Minimal Time
-    ///////////////////////////////////////////////////////////////////////////////////////////
-    float ignCell = 0.;
-    float ignTimeMin = INF;
-    while(counter < 2000){
+    while(timeNext < INF && counter < 200000){
+        timeNow = timeNext;
+        timeNext = INF;
         counter++;
 
         // Loop through all cells
         // for(cell = 0; cell < CELLS; cell++){
         for ( cell=0, row=0; row<Rows; row++ ){
             for ( col=0; col<Cols; col++, cell++ ){
-                ignCell = ignTime[cell];
-
-                if(ignCell > 0){
-                    ignTimeMin = INF;
-                    // Loop through neighbors
-                    for(int n = 0; n < 16; n++){
+                if(timeNext > ignTime[cell] && ignTime[cell] > timeNow){
+                    timeNext = ignTime[cell];
+                }
+                else if( ignTime[cell] == timeNow){
+                    // for(int n = 0; n < 16; n++){
+                    for(int n = 0; n < 8; n++){
                         // find neighbor cell index
                         nrow = row + nRow[n];
                         ncol = col + nCol[n];
@@ -223,27 +175,77 @@ int main(){
                             continue;
                         ncell = ncol + nrow*Cols;
 
-                        ROS = .4 * (1.0 - .6)/(1 - .6 * cos(angle[n]));
-                        float ignTimeNew = ignTime[ncell] + L_n[n] / ROS;
-                        ignTimeMin = ignTimeNew*(ignTimeNew < ignTimeMin) + ignTimeMin*(ignTimeNew >= ignTimeMin);
-                        // if(ignTimeNew < ignTimeMin)
-                        //     ignTimeNew = ignTimeNew;
-                        // else if(ignTimeNew >= ignTimeMin)
-                        //     ignTimeMin = ignTimeMin;
-                        // std::cout << ignTimeNew << ' ';
+                        // If neighbor is unburned
+                        if(ignTime[ncell] > timeNow){
+                            // compute ignition time
+                            // ROS = blah blah
+                            ROS = .4 * (1.0 - .6)/(1 - .6 * cos(angle[n]));
+
+                            float ignTimeNew = timeNow + L_n[n] / ROS;
+
+                            if(ignTimeNew < ignTime[ncell]){
+                                ignTime[ncell] = ignTimeNew;
+                            }
+                            if(ignTimeNew < timeNext){
+                                timeNext = ignTimeNew;
+                            }
+                        }
                     }
-                    ignTimeNew[cell] = ignTimeMin;
                 }
             }
-            // std::cout << std::endl;
         }
-
-        // Swap pointers to loop
-        float *temp = ignTime;
-        ignTime = ignTimeNew;
-        ignTimeNew = temp;
-        // std::cout << counter << std::endl;
+        if(counter % 1000 == 0)
+            std::cout << counter << std::endl;
     }
+
+
+    ///////////////////////////////////////////////////////////////////////////////////////////
+    //                              Iterative Minimal Time
+    ///////////////////////////////////////////////////////////////////////////////////////////
+    // float ignCell = 0.;
+    // float ignTimeMin = INF;
+    // while(counter < 2000){
+    //     counter++;
+
+    //     // Loop through all cells
+    //     // for(cell = 0; cell < CELLS; cell++){
+    //     for ( cell=0, row=0; row<Rows; row++ ){
+    //         for ( col=0; col<Cols; col++, cell++ ){
+    //             ignCell = ignTime[cell];
+
+    //             if(ignCell > 0){
+    //                 ignTimeMin = INF;
+    //                 // Loop through neighbors
+    //                 for(int n = 0; n < 16; n++){
+    //                     // find neighbor cell index
+    //                     nrow = row + nRow[n];
+    //                     ncol = col + nCol[n];
+    //                     // std::cout << row << ' ' << col << ' ' << std::endl;
+    //                     if ( nrow<0 || nrow>= Rows || ncol<0 || ncol>=  Cols )
+    //                         continue;
+    //                     ncell = ncol + nrow*Cols;
+
+    //                     ROS = .4 * (1.0 - .6)/(1 - .6 * cos(angle[n]));
+    //                     float ignTimeNew = ignTime[ncell] + L_n[n] / ROS;
+    //                     ignTimeMin = ignTimeNew*(ignTimeNew < ignTimeMin) + ignTimeMin*(ignTimeNew >= ignTimeMin);
+    //                     // if(ignTimeNew < ignTimeMin)
+    //                     //     ignTimeNew = ignTimeNew;
+    //                     // else if(ignTimeNew >= ignTimeMin)
+    //                     //     ignTimeMin = ignTimeMin;
+    //                     // std::cout << ignTimeNew << ' ';
+    //                 }
+    //                 ignTimeNew[cell] = ignTimeMin;
+    //             }
+    //         }
+    //         // std::cout << std::endl;
+    //     }
+
+    //     // Swap pointers to loop
+    //     float *temp = ignTime;
+    //     ignTime = ignTimeNew;
+    //     ignTimeNew = temp;
+    //     // std::cout << counter << std::endl;
+    // }
 
 
     for(int i = 0; i < Rows*Cols; i++){
