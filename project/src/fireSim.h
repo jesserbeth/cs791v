@@ -1,5 +1,8 @@
 #include <iostream>
 #include <vector>
+#include "FuelModel.h"
+#include "FuelMoisture.h"
+
 
 using namespace std;
 
@@ -118,23 +121,27 @@ class fireSim{
 
       // Rothermel Data Members
       float** fuelTexture;
-      vec4** deadSAVBurnableBuffer;
-      vec4** dead1hBuffer;
-      vec4** dead10hBuffer;
-      vec4** dead100hBuffer;
-      vec4** liveHBuffer;
-      vec4** liveWBuffer;
-      vec4** fineDeadExctinctionsDensityBuffer;
-      vec4** areasReactionFactorsBuffer;
-      vec4** slopeWindFactorsBuffer;
-      vec4** residenceFluxLiveSAVBuffer;
-      vec2** fuelSAVAccelBuffer;
-      vec3** slopeAspectElevationBuffer;
+      vec4*  deadSAVBurnableBuffer;
+      vec4*  dead1hBuffer;
+      vec4*  dead10hBuffer;
+      vec4*  dead100hBuffer;
+      vec4*  liveHBuffer;
+      vec4*  liveWBuffer;
+      vec4*  fineDeadExtinctionsDensityBuffer;
+      vec4*  areasReactionFactorsBuffer;
+      vec4*  slopeWindFactorsBuffer;
+      vec4*  residenceFluxLiveSAVBuffer;
+      vec2*  fuelSAVAccelBuffer;
+      // Roth textures
+      vec3** slopeAspectElevationTexture;
       vec2** windTexture;
       vec3** deadMoisturesTexture;
       vec2** liveMoisturesTexture;
 
       int simDimX;
       int simDimY;
+
+      std::vector<sim::FuelModel> _models;
+      std::vector<sim::FuelMoisture> _moistures;
 };
 

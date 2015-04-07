@@ -6,7 +6,7 @@ import csv
 # print filename
 A = []
 # with open(filename, 'rb') as csvfile:
-with open('test.csv', 'rb') as csvfile:
+with open('data_Roger__2048.csv', 'rb') as csvfile:
 	spamreader = csv.reader(csvfile, delimiter=' ')
 	for row in spamreader:
 		T = []

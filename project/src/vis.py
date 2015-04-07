@@ -35,7 +35,7 @@ with open('test.csv', 'rb') as csvfile:
 # grid(True)
 
 figure(3)
-# imshow(A, interpolation='nearest')
+imshow(A, interpolation='none')
 imshow(A)
 grid(True)
 show()

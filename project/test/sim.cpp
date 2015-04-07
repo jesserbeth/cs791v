@@ -1,6 +1,9 @@
 #include <iostream>
 #include <fstream>
 #include <math.h>
+#include <string.h>
+#include <sys/time.h>
+#include <stdlib.h>
 
 // using namespace std;
 
@@ -21,39 +24,48 @@ float burnDistance(float dist, float rate, float timeStep){
 int main(){
     // vars
     std::ofstream fout;
-    fout.open("test.csv");
     // int totalTime = 100;
+    for(int T = 2048; T < 2049; T<<=1){
+    // for(int T = 64; T < 70; T<<=1){
+        std::cout << "T: " << T << std::endl;
+    // fout.open("test.csv");
+    struct timeval start, fin;
+
+
     float timeStep = .5;
-    int Rows = 10000;
-    int Cols = 10000;
+    // int Rows = 10000;
+    // int Cols = 10000;
+    int Rows = T;
+    int Cols = T;
     int CELLS = Rows * Cols;
-    // int ignMap[CELLS];
-    // int ignMapStep[CELLS];
-    // float rateMap[CELLS];
+    int *ignMap = new int[CELLS];
+    int *ignMapStep = new int[CELLS];
+    float *rateMap = new float[CELLS];
     // std::cout << "temp" << std::endl;
     float *ignTime = new float[CELLS];
     float *ignTimeNew = new float[CELLS];
     // float rateMap[Rows*Cols];
-    // float baseDistance = 5.;
-    // float** burnDist = new float*[Rows*Cols];
-    // for(int i = 0; i < Rows*Cols; i++){
-    //     // burnDist[i] = new float[8];
-    //     burnDist[i] = new float[12];
-    // }
+    float baseDistance = 5.;
+    float** burnDist = new float*[Rows*Cols];
     for(int i = 0; i < Rows*Cols; i++){
-        // ignMap[i] = 0;
-        // ignMapStep[i] = 0;
+        // burnDist[i] = new float[8];
+        burnDist[i] = new float[12];
+    }
+    for(int i = 0; i < Rows*Cols; i++){
+        ignMap[i] = 0;
+        ignMapStep[i] = 0;
+        ignTime[i] = 0;
         ignTime[i] = INF;
         ignTimeNew[i] = INF;
-        // rateMap[i] = 0.0;
-        // for(int j = 0; j < 8; j++){
-        //     if(j % 2 == 1){
-        //         burnDist[i][j] = baseDistance * sqrt(2);
-        //         // std::cout << burnDist[i][j] << std::endl;
-        //     }
-        //     else
-        //         burnDist[i][j] = baseDistance;
-        // }
+        rateMap[i] = 0.0;
+        for(int j = 0; j < 8; j++){
+            if(j % 2 == 1){
+                burnDist[i][j] = baseDistance * sqrt(2);
+                // std::cout << burnDist[i][j] << std::endl;
+            }
+            else
+                burnDist[i][j] = baseDistance;
+        }
         // for(int j = 8; j < 12; j++){
         //     burnDist[i][j] = 2 * baseDistance * sqrt(2);
         // }
@@ -71,6 +83,7 @@ int main(){
     float orthoSize = cellSize;
     float diagSize = cellSize * sqrt(2);
     float superSize = sqrt(pow(cellSize, 2) + pow(cellSize*2, 2));
+    float pi = 3.14159;
     /* neighbor's address*/     /* N  NE   E  SE   S  SW   W  NW */
     // static int nCol[8] =        {  0,  1,  1,  1,  0, -1, -1, -1};
     // static int nRow[8] =        {  1,  1,  0, -1, -1, -1,  0,  1};
@@ -78,28 +91,46 @@ int main(){
     /* neighbor's address*/     /* N  NE   E  SE   S  SW   W  NW  NNW NNE NEE SEE SSE SSW SWW NWW*/
     static int nCol[16] =        {  0,  1,  1,  1,  0, -1, -1, -1, -1, 1, 2, 2, 1, -1, -2, -2};
     static int nRow[16] =        {  1,  1,  0, -1, -1, -1,  0,  1, 2, 2, 1, -1, -2, -2, -1, 1};
-    static float angle[16] =     {   90, 45, 0, 45, 90, 45, 0, 45, 
-                                     26.57, 63.43, 26.57, 26.57, 63.43, 63.43, 26.57, 26.57};
+    // static float angle[16] =     {   90, 45, 0, 45, 90, 45, 0, 45, 
+                                     // 26.57, 63.43, 26.57, 26.57, 63.43, 63.43, 26.57, 26.57};
+                                     // 27, 63, 27, 63, 27, 63, 27, 63};
+    static float angle[16] =     {   30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30};
     static float L_n[16] =        { orthoSize, diagSize, orthoSize, diagSize, orthoSize, diagSize,
                                     orthoSize, diagSize, superSize,superSize,superSize,superSize,
                                     superSize,superSize,superSize,superSize};
     //ignite point
-    // ignMap[5250] = 1;
-    // ignMap[3400] = 1;
-    // rateMap[5250] = .4;
     // rateMap[3400] = 3.;
     int ignSpot = Rows * Cols / 2 + Cols / 2;
+    ignMap[ignSpot] = 1;
+    // ignMap[3400] = 1;
+    rateMap[ignSpot] = 4.;
     ignTime[ignSpot] = 0;
-    ignTimeNew[ignSpot] = 0;
-    ignSpot /= 2;
-    ignTime[ignSpot] = 0;
-    ignTimeNew[ignSpot] = 0;
+    // ignTime[ignSpot] = 0;
+    // ignTimeNew[ignSpot] = 0;
+    // ignSpot /= 2;
+    // ignTime[ignSpot] = 0;
+    // ignTimeNew[ignSpot] = 0;
     // ignTime[3400] = 0;
     // bool spreadFire = false;
     // int stepCounter = 0;
+    // int edgeCount = 0;
+    // int edgeNum = Rows*4;
+    int corner = 0;
 
-    // loop through time:
-    // for(int t = 0; t < 2000; t++){
+    // char threadNum[21];
+    // sprintf(threadNum, "_%d", T);
+    // char f_name[] = "data_Roger_";
+    // char csv[] = ".csv";
+    // strcat(f_name,threadNum);
+    // strcat(f_name,csv);
+    // fout.open(f_name);
+
+
+    // // loop through time:
+    // // BURNING DISTANCES
+    // gettimeofday(&start, NULL);
+    // // for(int t = 0; t < 20000; t++){
+    // for(int t = 1; t < 20000; t++){
     //     for ( cell=0, row=0; row<Rows; row++ ){
     //         for ( col=0; col<Cols; col++, cell++ ){
     //             // check if already "ignited"
@@ -108,7 +139,7 @@ int main(){
     //             }
     //             // std::cout << row << ' ' << ignMap[cell] << std::endl;
     //             // check neighbors for ignition
-    //             spreadFire = true;
+    //             // spreadFire = true;
     //             for(int n = 0; n < 8; n++){
     //                 nrow = row + nRow[n];
     //                 ncol = col + nCol[n];
@@ -132,17 +163,57 @@ int main(){
     //                     ignMapStep[ncell] = 1;
     //                     ignTime[ncell] = t;
     //                     rateMap[ncell] = rateMap[cell];
+    //                     if(nrow == (Rows-1) && ncol == (Cols-1)){
+    //                         corner += 1;
+    //                     }
+    //                     if(nrow == 0 && ncol == (Cols-1)){
+    //                         corner += 1;
+    //                     }
+    //                     if(nrow == 0 && ncol == 0){
+    //                         corner += 1;
+    //                     }
+    //                     if(nrow == (Rows-1) && ncol == 0){
+    //                         corner += 1;
+    //                     }
+
                         
     //                 }
+
     //             }
     //         }
     //         // stepCounter++;
     //     }
+    //     // std::cout << edgeCount << std::endl;
     //     for(int i = 0; i < Rows*Cols; i++){
     //         if(ignMapStep[i] == 1)
     //             ignMap[i] = 1;
     //     }
+    //     if(corner == 4)
+    //         break;
+    //     // std::cout << t << std::endl;
     // }
+    // gettimeofday(&fin, NULL);
+    // double t = fin.tv_usec + fin.tv_sec * 1000000.0;
+    // t -= start.tv_usec + start.tv_sec * 1000000.0;
+    // t /= 1000000.0;
+    // std::cout << "Processing " << T << " threads took " << t << " seconds" << std::endl;
+
+
+
+
+    // for(int i = 0; i < Rows*Cols; i++){
+    //     // std::cout << ignTime[i] << " ,";
+    //     if(i %Rows == 0 && i !=0){
+    //         // std::cout << std::endl;
+    //         fout << '\n';
+    //     }
+    //     fout << (int)ignTime[i] << " ";
+    //     // fout << (int)ignTimeNew[i] << " ";
+    // }
+    // fout.close();
+
+
+
     float timeNext = 0.;
     float timeNow = 0.;
     float ROS = .4 * (1.0 - .2)/(1 - .2 * cos(30));
@@ -152,7 +223,18 @@ int main(){
     int counter = 0;
 
 
-    while(timeNext < INF && counter < 200000){
+    char threadNum[21];
+    sprintf(threadNum, "_%d", T);
+    char f_name[] = "data_MT";
+    char csv[] = ".csv";
+    strcat(f_name,threadNum);
+    strcat(f_name,csv);
+    fout.open(f_name);
+
+    // Start Timer
+    gettimeofday(&start, NULL);
+    // while(timeNext < INF && counter < 200000){
+    while(timeNext < INF){
         timeNow = timeNext;
         timeNext = INF;
         counter++;
@@ -165,8 +247,8 @@ int main(){
                     timeNext = ignTime[cell];
                 }
                 else if( ignTime[cell] == timeNow){
-                    // for(int n = 0; n < 16; n++){
-                    for(int n = 0; n < 8; n++){
+                    for(int n = 0; n < 16; n++){
+                    // for(int n = 0; n < 8; n++){
                         // find neighbor cell index
                         nrow = row + nRow[n];
                         ncol = col + nCol[n];
@@ -194,26 +276,79 @@ int main(){
                 }
             }
         }
-        if(counter % 1000 == 0)
-            std::cout << counter << std::endl;
+        // if(counter % 1000 == 0)
+            // std::cout << counter << std::endl;
     }
+    // End Timer
+
+    gettimeofday(&fin, NULL);
+    double t = fin.tv_usec + fin.tv_sec * 1000000.0;
+    t -= start.tv_usec + start.tv_sec * 1000000.0;
+    t /= 1000000.0;
+    std::cout << "Processing " << T << " threads took " << t << " seconds" << std::endl;
+
+
+    // Write data to file
+
+    for(int i = 0; i < Rows*Cols; i++){
+        // std::cout << ignTime[i] << " ,";
+        if(i %Rows == 0 && i !=0){
+            // std::cout << std::endl;
+            fout << '\n';
+        }
+        fout << (int)ignTime[i] << " ";
+        // fout << (int)ignTimeNew[i] << " ";
+    }
+    fout.close();
 
 
     ///////////////////////////////////////////////////////////////////////////////////////////
     //                              Iterative Minimal Time
     ///////////////////////////////////////////////////////////////////////////////////////////
     // float ignCell = 0.;
+    // float ignCellNew = 0.;
     // float ignTimeMin = INF;
-    // while(counter < 2000){
+    // int simCounter = 0;
+    
+
+    // char threadNum[21];
+    // sprintf(threadNum, "_%d", T);
+    // char f_name[] = "data_IterativeMT_";
+    // char csv[] = ".csv";
+    // strcat(f_name,threadNum);
+    // strcat(f_name,csv);
+    // fout.open(f_name);
+    // // int minIterations = 100;
+    // bool* check = new bool[Rows*Cols];
+    // for(int z = 0; z < Rows*Cols; z++){
+    //     check[z] = false;
+    // }
+
+    // gettimeofday(&start, NULL);
+
+    // // while(counter < 200){
+    // while(simCounter < Rows*Cols){
     //     counter++;
 
     //     // Loop through all cells
     //     // for(cell = 0; cell < CELLS; cell++){
     //     for ( cell=0, row=0; row<Rows; row++ ){
     //         for ( col=0; col<Cols; col++, cell++ ){
+    //             if(check[cell] == true)
+    //                 continue;
+    //             // Check for simulation completion
     //             ignCell = ignTime[cell];
+    //             ignCellNew = ignTimeNew[cell];
+    //             // std::cout << ignCell << ' ' << ignTimeNew[cell];
+    //             if(abs(ignTime[cell] - ignTimeNew[cell]) < .001 && ignCell != INF
+    //                     && ignCellNew != INF && check[cell] != true){
+    //                 simCounter++;
+    //                 check[cell] = true;
+    //                 continue;
+    //             }
 
     //             if(ignCell > 0){
+    //                 // ignTimeMin = INF;
     //                 ignTimeMin = INF;
     //                 // Loop through neighbors
     //                 for(int n = 0; n < 16; n++){
@@ -244,18 +379,29 @@ int main(){
     //     float *temp = ignTime;
     //     ignTime = ignTimeNew;
     //     ignTimeNew = temp;
-    //     // std::cout << counter << std::endl;
     // }
+    //     // std::cout << counter << std::endl;
 
 
-    for(int i = 0; i < Rows*Cols; i++){
-        // std::cout << ignTime[i] << " ,";
-        if(i %Rows == 0 && i !=0){
-            // std::cout << std::endl;
-            fout << '\n';
-        }
-        fout << (int)ignTime[i] << " ";
-        // fout << (int)ignTimeNew[i] << " ";
-    }
-    fout.close();
+    // // End Timer
+    // gettimeofday(&fin, NULL);
+    // double t = fin.tv_usec + fin.tv_sec * 1000000.0;
+    // t -= start.tv_usec + start.tv_sec * 1000000.0;
+    // t /= 1000000.0;
+    // std::cout << "Processing " << T << " cells took " << t << " seconds" << std::endl;
+
+    // for(int i = 0; i < Rows*Cols; i++){
+    //     // std::cout << ignTime[i] << " ,";
+    //     if(i %Rows == 0 && i !=0){
+    //         // std::cout << std::endl;
+    //         fout << '\n';
+    //     }
+    //     fout << (int)ignTime[i] << " ";
+    //     // fout << (int)ignTimeNew[i] << " ";
+    // }
+    // fout.close();
+
+    delete ignTime;
+    delete ignTimeNew;
+    }   
 }

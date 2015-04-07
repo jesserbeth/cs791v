@@ -19,6 +19,10 @@ fireSim::fireSim(){
    simDimX = sizeX;
    simDimY = sizeY;
 
+   _models = sim::readFuelModels("default.fmd");
+   _moistures = sim::readFuelMoistures("../data/kyle.fms");
+   int numModels = _models.size();
+
    timeOfArrival = new float*[simDimX];
    rothData = new vec4*[simDimX];
    fuelTexture = new float*[simDimX];
@@ -39,18 +43,20 @@ fireSim::fireSim(){
 
    // rothermel vals
    fuelTexture = new float*[simDimX];
-   deadSAVBurnableBuffer = new vec4*[simDimX];
-   dead1hBuffer = new vec4*[simDimX];
-   dead10hBuffer = new vec4*[simDimX];
-   dead100hBuffer = new vec4*[simDimX];
-   liveHBuffer = new vec4*[simDimX];
-   liveWBuffer = new vec4*[simDimX];
-   fineDeadExctinctionsDensityBuffer = new vec4*[simDimX];
-   areasReactionFactorsBuffer = new vec4*[simDimX];
-   slopeWindFactorsBuffer = new vec4*[simDimX];
-   residenceFluxLiveSAVBuffer = new vec4*[simDimX];
-   fuelSAVAccelBuffer = new vec2*[simDimX];
-   slopeAspectElevationBuffer = new vec3*[simDimX];
+
+   deadSAVBurnableBuffer = new vec4[numModels];
+   dead1hBuffer = new vec4[numModels];
+   dead10hBuffer = new vec4[numModels];
+   dead100hBuffer = new vec4[numModels];
+   liveHBuffer = new vec4[numModels];
+   liveWBuffer = new vec4[numModels];
+   fineDeadExtinctionsDensityBuffer = new vec4[numModels];
+   areasReactionFactorsBuffer = new vec4[numModels];
+   slopeWindFactorsBuffer = new vec4[numModels];
+   residenceFluxLiveSAVBuffer = new vec4[numModels];
+   fuelSAVAccelBuffer = new vec2[numModels];
+
+   slopeAspectElevationTexture = new vec3[simDimX];
    windTexture = new vec2*[simDimX];
    deadMoisturesTexture = new vec3*[simDimX];
    liveMoisturesTexture = new vec2*[simDimX];
@@ -59,7 +65,6 @@ fireSim::fireSim(){
    for(int i = 0; i < simDimX; i++){
       timeOfArrival[i] = new float[simDimY];
       rothData[i] = new vec4[simDimY];
-      deadSAVBurnableBuffer[i] = new vec4[simDimY];
       fuelTexture[i] = new float[simDimY];
       originalTimeOfArrival[i] = new float[simDimY];
       orthoSpreadRate[i] = new vec4[simDimY];
@@ -78,17 +83,18 @@ fireSim::fireSim(){
 
       // rothermel
       fuelTexture[i] = new float[simDimY];
-      dead1hBuffer[i] = new vec4[simDimY];
-      dead10hBuffer[i] = new vec4[simDimY];
-      dead100hBuffer[i] = new vec4[simDimY];
-      liveHBuffer[i] = new vec4[simDimY];
-      liveWBuffer[i] = new vec4[simDimY];
-      fineDeadExctinctionsDensityBuffer[i] = new vec4[simDimY];
-      areasReactionFactorsBuffer[i] = new vec4[simDimY];
-      slopeWindFactorsBuffer[i] = new vec4[simDimY];
-      residenceFluxLiveSAVBuffer[i] = new vec4[simDimY];
-      fuelSAVAccelBuffer[i] = new vec2[simDimY];
-      slopeAspectElevationBuffer[i] = new vec3[simDimY];
+      // deadSAVBurnableBuffer[i] = new vec4[simDimY];
+      // dead1hBuffer[i] = new vec4[simDimY];
+      // dead10hBuffer[i] = new vec4[simDimY];
+      // dead100hBuffer[i] = new vec4[simDimY];
+      // liveHBuffer[i] = new vec4[simDimY];
+      // liveWBuffer[i] = new vec4[simDimY];
+      // fineDeadExctinctionsDensityBuffer[i] = new vec4[simDimY];
+      // areasReactionFactorsBuffer[i] = new vec4[simDimY];
+      // slopeWindFactorsBuffer[i] = new vec4[simDimY];
+      // residenceFluxLiveSAVBuffer[i] = new vec4[simDimY];
+      // fuelSAVAccelBuffer[i] = new vec2[simDimY];
+      slopeAspectElevationTexture[i] = new vec3[simDimY];
       windTexture[i] = new vec2[simDimY];
       deadMoisturesTexture[i] = new vec3[simDimY];
       liveMoisturesTexture[i] = new vec2[simDimY];
@@ -106,6 +112,8 @@ fireSim::fireSim(){
    // outputDiagRates;
    // timeStamp;
    // outputSourceData; 
+
+   // Populate FuelModel
 }
 
 /*
@@ -150,33 +158,146 @@ void fireSim::init(){
          spreadData[i][j] = 0.;
 
          // Rothermel Data Members
-         fuelTexture[i][j] = 100.;
-         deadSAVBurnableBuffer[i][j].x = deadSAVBurnableBuffer[i][j].y = deadSAVBurnableBuffer[i][j].z = deadSAVBurnableBuffer[i][j].w = 200.;
-   // cout << ";klajdfjkl;" << endl;
-         dead1hBuffer[i][j].x = dead1hBuffer[i][j].y = dead1hBuffer[i][j].z = dead1hBuffer[i][j].z = 1.;
-         dead10hBuffer[i][j].x = dead10hBuffer[i][j].y = dead10hBuffer[i][j].z = dead10hBuffer[i][j].w = 1.;
-         dead100hBuffer[i][j].x = dead100hBuffer[i][j].y = dead100hBuffer[i][j].z = dead100hBuffer[i][j].w = 1.;
-         liveHBuffer[i][j].x = liveHBuffer[i][j].y = liveHBuffer[i][j].z = liveHBuffer[i][j].w = 1.;
-         liveWBuffer[i][j].x = liveWBuffer[i][j].y = liveWBuffer[i][j].z = liveWBuffer[i][j].w = 1.;
-         fineDeadExctinctionsDensityBuffer[i][j].x = fineDeadExctinctionsDensityBuffer[i][j].y = fineDeadExctinctionsDensityBuffer[i][j].z = fineDeadExctinctionsDensityBuffer[i][j].w = 1.;
-         areasReactionFactorsBuffer[i][j].x = areasReactionFactorsBuffer[i][j].y = areasReactionFactorsBuffer[i][j].z = areasReactionFactorsBuffer[i][j].w = 1.;
-         slopeWindFactorsBuffer[i][j].x = slopeWindFactorsBuffer[i][j].y = slopeWindFactorsBuffer[i][j].z = slopeWindFactorsBuffer[i][j].w = 1.;
-         residenceFluxLiveSAVBuffer[i][j].x = residenceFluxLiveSAVBuffer[i][j].y = residenceFluxLiveSAVBuffer[i][j].z = residenceFluxLiveSAVBuffer[i][j].w = 1.;
-         fuelSAVAccelBuffer[i][j].x = fuelSAVAccelBuffer[i][j].y = 1.;
-         slopeAspectElevationBuffer[i][j].x = slopeAspectElevationBuffer[i][j].y = slopeAspectElevationBuffer[i][j].z = 1.;
-         windTexture[i][j].x = windTexture[i][j].y = 1.;
-         deadMoisturesTexture[i][j].x = deadMoisturesTexture[i][j].y = deadMoisturesTexture[i][j].z = 1.;
-         liveMoisturesTexture[i][j].x = liveMoisturesTexture[i][j].y = 1.;
-         // cout << "test" << endl;
+   //       fuelTexture[i][j] = 100.;
+   //       deadSAVBurnableBuffer[i][j].x = deadSAVBurnableBuffer[i][j].y = deadSAVBurnableBuffer[i][j].z = deadSAVBurnableBuffer[i][j].w = 200.;
+   // // cout << ";klajdfjkl;" << endl;
+   //       dead1hBuffer[i][j].x = dead1hBuffer[i][j].y = dead1hBuffer[i][j].z = dead1hBuffer[i][j].z = 1.;
+   //       dead10hBuffer[i][j].x = dead10hBuffer[i][j].y = dead10hBuffer[i][j].z = dead10hBuffer[i][j].w = 1.;
+   //       dead100hBuffer[i][j].x = dead100hBuffer[i][j].y = dead100hBuffer[i][j].z = dead100hBuffer[i][j].w = 1.;
+   //       liveHBuffer[i][j].x = liveHBuffer[i][j].y = liveHBuffer[i][j].z = liveHBuffer[i][j].w = 1.;
+   //       liveWBuffer[i][j].x = liveWBuffer[i][j].y = liveWBuffer[i][j].z = liveWBuffer[i][j].w = 1.;
+   //       fineDeadExctinctionsDensityBuffer[i][j].x = fineDeadExctinctionsDensityBuffer[i][j].y = fineDeadExctinctionsDensityBuffer[i][j].z = fineDeadExctinctionsDensityBuffer[i][j].w = 1.;
+   //       areasReactionFactorsBuffer[i][j].x = areasReactionFactorsBuffer[i][j].y = areasReactionFactorsBuffer[i][j].z = areasReactionFactorsBuffer[i][j].w = 1.;
+   //       slopeWindFactorsBuffer[i][j].x = slopeWindFactorsBuffer[i][j].y = slopeWindFactorsBuffer[i][j].z = slopeWindFactorsBuffer[i][j].w = 1.;
+   //       residenceFluxLiveSAVBuffer[i][j].x = residenceFluxLiveSAVBuffer[i][j].y = residenceFluxLiveSAVBuffer[i][j].z = residenceFluxLiveSAVBuffer[i][j].w = 1.;
+   //       fuelSAVAccelBuffer[i][j].x = fuelSAVAccelBuffer[i][j].y = 1.;
+         slopeAspectElevationTexture[i][j].x = slopeAspectElevationTexture[i][j].y = slopeAspectElevationTexture[i][j].z = 0.;
+         windTexture[i][j].x = windTexture[i][j].y = 0.;
+   //       deadMoisturesTexture[i][j].x = deadMoisturesTexture[i][j].y = deadMoisturesTexture[i][j].z = 1.;
+   //       liveMoisturesTexture[i][j].x = liveMoisturesTexture[i][j].y = 1.;
+   //       // cout << "test" << endl;
+
       }
    }
    spreadData[5][5] = 100;
    // cout << "HERE" << endl;
 
+   // Attempting to read from fuelModel obj. into mine
+   // ContextData* cd = new ContextData();
+   // int numModels = _models.size();
+   // float* dead1hData = new float[numModels * 4];
+   // float* dead10hData = new float[numModels * 4];
+   // float* dead100hData = new float[numModels * 4];
+   // float* liveHData = new float[numModels * 4];
+   // float* liveWData = new float[numModels * 4];
+   // float* fineDeadExtinctionsDensityData = new float[numModels * 4];
+   // float* areasReactionFactorsData = new float[numModels * 4];
+   // float* slopeWindFactorsData = new float[numModels * 4];
+   // float* residenceFluxLiveSAVData = new float[numModels * 4];
+   // float* deadSAVBurnableData = new float[numModels * 4];
+   // float* fuelSAVAccelData = new float[numModels * 4];
+
+   {
+      // float* dead1h = dead1hData;
+      // float* dead10h = dead10hData;
+      // float* dead100h = dead100hData;
+      // float* liveH = liveHData;
+      // float* liveW = liveWData;
+      // float* fineDeadExtinctionsDensity = fineDeadExtinctionsDensityData;
+      // float* areasReactionFactors = areasReactionFactorsData;
+      // float* slopeWindFactors = slopeWindFactorsData;
+      // float* residenceFluxLiveSAV = residenceFluxLiveSAVData;
+      // float* deadSAVBurnable = deadSAVBurnableData;
+      // float* fuelSAVAccel = fuelSAVAccelData;
+      int i = 0;
+      for (std::vector<sim::FuelModel>::iterator it = _models.begin(); 
+           it != _models.end(); it++, i++)
+      {
+         dead1hBuffer[i].x = it->effectiveHeatingNumber[sim::Dead1h];
+         dead1hBuffer[i].y = it->load[sim::Dead1h];
+         dead1hBuffer[i].z = it->areaWeightingFactor[sim::Dead1h];
+         dead1hBuffer[i].w = it->fuelMoisture[sim::Dead1h];
+         
+         dead10hBuffer[i].x = it->effectiveHeatingNumber[sim::Dead10h];
+         dead10hBuffer[i].y = it->load[sim::Dead10h];
+         dead10hBuffer[i].z = it->areaWeightingFactor[sim::Dead10h];
+         dead10hBuffer[i].w = it->fuelMoisture[sim::Dead10h];
+         
+         dead100hBuffer[i].x = it->effectiveHeatingNumber[sim::Dead100h];
+         dead100hBuffer[i].y = it->load[sim::Dead100h];
+         dead100hBuffer[i].z = it->areaWeightingFactor[sim::Dead100h];
+         dead100hBuffer[i].w = it->fuelMoisture[sim::Dead100h];
+         
+         liveHBuffer[i].x = it->effectiveHeatingNumber[sim::LiveH];
+         liveHBuffer[i].y = it->load[sim::LiveH];
+         liveHBuffer[i].z = it->areaWeightingFactor[sim::LiveH];
+         liveHBuffer[i].w = it->fuelMoisture[sim::LiveH];
+         
+         liveWBuffer[i].x = it->effectiveHeatingNumber[sim::LiveW];
+         liveWBuffer[i].y = it->load[sim::LiveW];
+         liveWBuffer[i].z = it->areaWeightingFactor[sim::LiveW];
+         liveWBuffer[i].w = it->fuelMoisture[sim::LiveW];
+
+         fineDeadExtinctionsDensityBuffer[i].x = it->fineDeadRatio;
+         fineDeadExtinctionsDensityBuffer[i].y = it->extinctionMoisture;
+         fineDeadExtinctionsDensityBuffer[i].z = it->liveExtinction;
+         fineDeadExtinctionsDensityBuffer[i].w = it->fuelDensity;
+
+         areasReactionFactorsBuffer[i].x = it->deadArea;
+         areasReactionFactorsBuffer[i].y = it->liveArea;
+         areasReactionFactorsBuffer[i].z = it->deadReactionFactor;
+         areasReactionFactorsBuffer[i].w = it->liveReactionFactor;
+
+         slopeWindFactorsBuffer[i].x = it->slopeK;
+         slopeWindFactorsBuffer[i].y = it->windK;
+         slopeWindFactorsBuffer[i].z = it->windB;
+         slopeWindFactorsBuffer[i].w = it->windE;
+
+         residenceFluxLiveSAVBuffer[i].x = it->residenceTime;
+         residenceFluxLiveSAVBuffer[i].y = it->propagatingFlux;
+         residenceFluxLiveSAVBuffer[i].z = it->SAV[sim::LiveH];
+         residenceFluxLiveSAVBuffer[i].w = it->SAV[sim::LiveW];
+
+         deadSAVBurnableBuffer[i].x = it->SAV[sim::Dead1h];
+         deadSAVBurnableBuffer[i].y = it->SAV[sim::Dead10h];
+         deadSAVBurnableBuffer[i].z = it->SAV[sim::Dead100h];
+         deadSAVBurnableBuffer[i].w = it->burnable? 100.0f : 0.0f;
+
+         fuelSAVAccelBuffer[i].x = it->fuelSAV;
+         fuelSAVAccelBuffer[i].y = it->accelerationConstant;
+      }
+   }
+
+
+   // float* deadMoistures = new float[_numCells * 4];
+   // float* liveMoistures = new float[_numCells * 4];
+   // double y = _bottom;
+   // for (int row = 0; row < _rows; ++row, y += _cellsize)
+   // {
+   //    double x = _left;
+   //    for (int col = 0; col < _cols; ++ col, x += _cellsize)
+   //    {
+   //       int offset = (row * _cols + col) * 4;
+   //       int fuelModel = _database->fuelMap->getGeoCell(x, y);
+   //       sim::FuelMoisture& moisture = _moistures[fuelModel];
+         
+   //       deadMoistures[offset + 0] = moisture.dead1h;
+   //       deadMoistures[offset + 1] = moisture.dead10h;
+   //       deadMoistures[offset + 2] = moisture.dead100h;
+   //       deadMoistures[offset + 3] = 0.0f;
+
+   //       liveMoistures[offset + 0] = moisture.liveH;
+   //       liveMoistures[offset + 1] = moisture.liveW;
+   //       liveMoistures[offset + 2] = 0.0f;
+   //       liveMoistures[offset + 3] = 0.0f;
+   //    }
+   // }
+
+
 }
 
 /*
-   NOTES FOR HOW I GOT THE DATA D: (PLEASE LET THIS BE RIGHT)
+   NOTES FOR HOW I GOT THE DATA D: 
       Data I need                   Place I get it          (how it is produced)
       deadXh, liveX:                effectiveHeatingNumber  (calculated in fuelmodel)
                                     load                    (from .fmd)
@@ -229,6 +350,10 @@ void fireSim::updateSpreadData(){
          // Shader code: int fuelModel = texture2D(fuelTexture, gl_TexCoord[1].st).r;
             // gl_TexCoord[1].st corresponds to fuelTexture.xy
          int fuelModel = fuelTexture[i][j];
+
+         // FOR TESTING
+         fuelModel = 0;
+
          vec4 dead1h, deadSAVBurnable, dead10h, dead100h, liveH, 
               liveW, fineDeadExtinctionsDensity, areasReactionFactors,
               slopeWindFactors, residenceFluxLiveSAV;
@@ -246,25 +371,25 @@ void fireSim::updateSpreadData(){
          vec3 timeLagClass;
 
          // Get data into vars
-         deadSAVBurnable = deadSAVBurnableBuffer[i][j];
+         deadSAVBurnable = deadSAVBurnableBuffer[fuelModel];
          if(deadSAVBurnable.w < 50.0){
             continue;
          }
 
-         dead1h = dead1hBuffer[i][j];
-         dead10h = dead10hBuffer[i][j];
-         dead100h = dead100hBuffer[i][j];
-         liveH = liveHBuffer[i][j];
-         liveW = liveWBuffer[i][j];
-         fineDeadExtinctionsDensity = fineDeadExctinctionsDensityBuffer[i][j];
-         areasReactionFactors = areasReactionFactorsBuffer[i][j];
-         slopeWindFactors = slopeWindFactorsBuffer[i][j];
-         residenceFluxLiveSAV = residenceFluxLiveSAVBuffer[i][j];
-         fuelSAVAccel = fuelSAVAccelBuffer[i][j];
+         dead1h = dead1hBuffer[fuelModel];
+         dead10h = dead10hBuffer[fuelModel];
+         dead100h = dead100hBuffer[fuelModel];
+         liveH = liveHBuffer[fuelModel];
+         liveW = liveWBuffer[fuelModel];
+         fineDeadExtinctionsDensity = fineDeadExctinctionsDensityBuffer[fuelModel];
+         areasReactionFactors = areasReactionFactorsBuffer[fuelModel];
+         slopeWindFactors = slopeWindFactorsBuffer[fuelModel];
+         residenceFluxLiveSAV = residenceFluxLiveSAVBuffer[fuelModel];
+         fuelSAVAccel = fuelSAVAccelBuffer[fuelModel];
          float fuelSAV = fuelSAVAccel.x;
          float accelerationConstant = fuelSAVAccel.y;
 
-         slopeAspectElevation = slopeAspectElevationBuffer[i][j];
+         slopeAspectElevation = slopeAspectElevationTexture[i][j];
          wind = windTexture[i][j];
          deadMoistures = deadMoisturesTexture[i][j];
          liveMoistures = liveMoisturesTexture[i][j];
