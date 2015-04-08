@@ -2,6 +2,9 @@
 #include <algorithm>
 #include <math.h>
 
+
+#define b printf("%u\n", __LINE__);
+
 /* neighbor's address*/     /* N  NE   E  SE   S  SW   W  NW */
 static int nCol[8] =        {  0,  1,  1,  1,  0, -1, -1, -1};
 static int nRow[8] =        {  1,  1,  0, -1, -1, -1,  0,  1};
@@ -22,10 +25,12 @@ fireSim::fireSim(){
    _models = sim::readFuelModels("default.fmd");
    _moistures = sim::readFuelMoistures("../data/kyle.fms");
    int numModels = _models.size();
+   int numMoistModels = _moistures.size();
 
    timeOfArrival = new float*[simDimX];
+   // std::cout << timeOfArrival << std::endl;
    rothData = new vec4*[simDimX];
-   fuelTexture = new float*[simDimX];
+   // fuelTexture = new int*[simDimX];
    originalTimeOfArrival = new float*[simDimX];
    orthoSpreadRate = new vec4*[simDimX];
    diagSpreadRate = new vec4*[simDimX];
@@ -42,7 +47,7 @@ fireSim::fireSim(){
    spreadData = new float*[simDimX];
 
    // rothermel vals
-   fuelTexture = new float*[simDimX];
+   fuelTexture = new int*[simDimX];
 
    deadSAVBurnableBuffer = new vec4[numModels];
    dead1hBuffer = new vec4[numModels];
@@ -56,16 +61,16 @@ fireSim::fireSim(){
    residenceFluxLiveSAVBuffer = new vec4[numModels];
    fuelSAVAccelBuffer = new vec2[numModels];
 
-   slopeAspectElevationTexture = new vec3[simDimX];
+   slopeAspectElevationTexture = new vec3*[simDimX];
    windTexture = new vec2*[simDimX];
-   deadMoisturesTexture = new vec3*[simDimX];
-   liveMoisturesTexture = new vec2*[simDimX];
+   deadMoisturesTexture = new vec3[numMoistModels];
+   liveMoisturesTexture = new vec2[numMoistModels];
 
 
    for(int i = 0; i < simDimX; i++){
       timeOfArrival[i] = new float[simDimY];
       rothData[i] = new vec4[simDimY];
-      fuelTexture[i] = new float[simDimY];
+      fuelTexture[i] = new int[simDimY];
       originalTimeOfArrival[i] = new float[simDimY];
       orthoSpreadRate[i] = new vec4[simDimY];
       diagSpreadRate[i] = new vec4[simDimY];
@@ -82,7 +87,7 @@ fireSim::fireSim(){
       spreadData[i] = new float[simDimY];
 
       // rothermel
-      fuelTexture[i] = new float[simDimY];
+      // fuelTexture[i] = new float[simDimY];
       // deadSAVBurnableBuffer[i] = new vec4[simDimY];
       // dead1hBuffer[i] = new vec4[simDimY];
       // dead10hBuffer[i] = new vec4[simDimY];
@@ -96,8 +101,8 @@ fireSim::fireSim(){
       // fuelSAVAccelBuffer[i] = new vec2[simDimY];
       slopeAspectElevationTexture[i] = new vec3[simDimY];
       windTexture[i] = new vec2[simDimY];
-      deadMoisturesTexture[i] = new vec3[simDimY];
-      liveMoisturesTexture[i] = new vec2[simDimY];
+      // deadMoisturesTexture[i] = new vec3[simDimY];
+      // liveMoisturesTexture[i] = new vec2[simDimY];
    }
 
    startTime = 0.; 
@@ -125,6 +130,87 @@ fireSim::~fireSim(){
    int sizeY = 100;
 
    // blah blah
+      // std::cout << "Deallocating memory" << std::endl;
+
+   simDimX = sizeX;
+   simDimY = sizeY;
+
+   // _models = sim::readFuelModels("default.fmd");
+   // _moistures = sim::readFuelMoistures("../data/kyle.fms");
+   // int numModels = _models.size();
+
+
+   // for(int i = 0; i < simDimX; i++){
+   //    delete timeOfArrival[i];
+   //    delete rothData[i];
+   //    delete fuelTexture[i];;
+   //    delete originalTimeOfArrival[i];;
+   //    delete orthoSpreadRate[i];
+   //    delete diagSpreadRate[i];
+   //    delete orthoMaxSpreadRate[i];
+   //    delete diagMaxSpreadRate[i];
+   //    delete orthoBurnDistance[i];
+   //    delete diagBurnDistance[i];
+   //    delete updateStamp[i];
+   //    delete sourceDataTexture[i];;
+
+   //    delete crownThreshold[i];;
+   //    delete crownActiveRate[i];;
+   //    delete canopyHeight[i];;
+   //    delete spreadData[i];;
+
+   //    // rothermel
+   //    delete fuelTexture[i];;
+   //    delete slopeAspectElevationTexture[i];
+   //    delete windTexture[i];
+   // }
+   // delete timeOfArrival;
+   // delete rothData;
+   // delete fuelTexture;
+   // delete originalTimeOfArrival;
+   // delete orthoSpreadRate;
+   // delete diagSpreadRate;
+   // delete orthoMaxSpreadRate;
+   // delete diagMaxSpreadRate;
+   // delete orthoBurnDistance;
+   // delete diagBurnDistance;
+   // delete updateStamp;
+   // delete sourceDataTexture;
+
+   // delete crownThreshold;
+   // delete crownActiveRate;
+   // delete canopyHeight;
+   // delete spreadData;
+
+   // // rothermel vals
+   // delete fuelTexture;
+
+   // delete deadSAVBurnableBuffer;
+   // delete dead1hBuffer;
+   // delete dead10hBuffer;
+   // delete dead100hBuffer;
+   // delete liveHBuffer;
+   // delete liveWBuffer;
+   // delete fineDeadExtinctionsDensityBuffer;
+   // delete areasReactionFactorsBuffer;
+   // delete slopeWindFactorsBuffer;
+   // delete residenceFluxLiveSAVBuffer;
+   // delete fuelSAVAccelBuffer;
+
+   // delete slopeAspectElevationTexture;
+   // delete windTexture;
+   // delete deadMoisturesTexture;
+   // delete liveMoisturesTexture;
+
+
+
+   startTime = 0.; 
+   baseTime = 0.;
+   endTime = 1000.;
+   lastStamp = 0.;
+   currentStamp = 0.;
+   accelerationConstant = 1.0;
+   // std::cout << "end of destructor" << std::endl;
 
 }
 
@@ -141,7 +227,7 @@ void fireSim::init(){
       for(int j = 0; j < simDimY; j++){
          timeOfArrival[i][j] = 20.;
          rothData[i][j].x = rothData[i][j].y = rothData[i][j].z = 0.;
-         fuelTexture[i][j] = 151.;
+         fuelTexture[i][j] = 0.;
          originalTimeOfArrival[i][j] = 20.;
          orthoSpreadRate[i][j].x = orthoSpreadRate[i][j].y = orthoSpreadRate[i][j].z = orthoSpreadRate[i][j].w = 1.;
          diagSpreadRate[i][j].x = diagSpreadRate[i][j].y = diagSpreadRate[i][j].z = diagSpreadRate[i][j].w = 1.;
@@ -172,7 +258,7 @@ void fireSim::init(){
    //       residenceFluxLiveSAVBuffer[i][j].x = residenceFluxLiveSAVBuffer[i][j].y = residenceFluxLiveSAVBuffer[i][j].z = residenceFluxLiveSAVBuffer[i][j].w = 1.;
    //       fuelSAVAccelBuffer[i][j].x = fuelSAVAccelBuffer[i][j].y = 1.;
          slopeAspectElevationTexture[i][j].x = slopeAspectElevationTexture[i][j].y = slopeAspectElevationTexture[i][j].z = 0.;
-         windTexture[i][j].x = windTexture[i][j].y = 0.;
+         windTexture[i][j].x = windTexture[i][j].y = 10.;
    //       deadMoisturesTexture[i][j].x = deadMoisturesTexture[i][j].y = deadMoisturesTexture[i][j].z = 1.;
    //       liveMoisturesTexture[i][j].x = liveMoisturesTexture[i][j].y = 1.;
    //       // cout << "test" << endl;
@@ -197,7 +283,7 @@ void fireSim::init(){
    // float* deadSAVBurnableData = new float[numModels * 4];
    // float* fuelSAVAccelData = new float[numModels * 4];
 
-   {
+   // {
       // float* dead1h = dead1hData;
       // float* dead10h = dead10hData;
       // float* dead100h = dead100hData;
@@ -261,12 +347,43 @@ void fireSim::init(){
          deadSAVBurnableBuffer[i].x = it->SAV[sim::Dead1h];
          deadSAVBurnableBuffer[i].y = it->SAV[sim::Dead10h];
          deadSAVBurnableBuffer[i].z = it->SAV[sim::Dead100h];
-         deadSAVBurnableBuffer[i].w = it->burnable? 100.0f : 0.0f;
+         // deadSAVBurnableBuffer[i].w = it->burnable? 100.0f : 0.0f;
+         deadSAVBurnableBuffer[i].w = 100.0f;
 
          fuelSAVAccelBuffer[i].x = it->fuelSAV;
          fuelSAVAccelBuffer[i].y = it->accelerationConstant;
       }
-   }
+   // }
+      // for(int i = 0; i < _models.size(); i++){
+      //    cout << slopeWindFactorsBuffer[i].x << " " <<
+      //            slopeWindFactorsBuffer[i].y << " " <<
+      //            slopeWindFactorsBuffer[i].z << " " <<
+      //            slopeWindFactorsBuffer[i].w << endl;
+      // }
+
+      // double y = _bottom;
+      // for (int row = 0; row < _rows; ++row, y += _cellsize)
+      // {
+      //    double x = _left;
+      //    for (int col = 0; col < _cols; ++ col, x += _cellsize)
+      //    {
+            // int offset = (row * _cols + col) * 4;
+            // int fuelModel = _database->fuelMap->getGeoCell(x, y);
+      i = 0;
+      for (std::vector<sim::FuelMoisture>::iterator it = _moistures.begin(); 
+           it != _moistures.end(); it++, i++)
+      {
+            // FuelMoisture& moisture = _moistures[fuelModel];
+            
+            deadMoisturesTexture[i].x = it->dead1h;
+            deadMoisturesTexture[i].y = it->dead10h;
+            deadMoisturesTexture[i].z = it->dead100h;
+
+            liveMoisturesTexture[i].x = it->liveH;
+            liveMoisturesTexture[i].y = it->liveW;
+      //    }
+      // }
+      }
 
 
    // float* deadMoistures = new float[_numCells * 4];
@@ -344,6 +461,12 @@ void fireSim::updateSpreadData(){
    // This is where rothermel's shader is implemented
    int    nrow, ncol, ncell;   /* row, col, and index of neighbor cell */
    float dist = 10.;
+   int counter = 0;
+      // for(int i = 0; i < _models.size(); i++){
+      //    cout << deadSAVBurnableBuffer[i].x << " " <<
+      //            deadSAVBurnableBuffer[i].y << " " <<
+      //            deadSAVBurnableBuffer[i].z << endl;
+      // }
    
    for(int i = 0; i < simDimX; i++){
       for(int j = 0; j < simDimY; j++){
@@ -352,7 +475,7 @@ void fireSim::updateSpreadData(){
          int fuelModel = fuelTexture[i][j];
 
          // FOR TESTING
-         fuelModel = 0;
+         fuelModel = 1;
 
          vec4 dead1h, deadSAVBurnable, dead10h, dead100h, liveH, 
               liveW, fineDeadExtinctionsDensity, areasReactionFactors,
@@ -364,24 +487,28 @@ void fireSim::updateSpreadData(){
          vec3 deadMoistures;
          vec2 liveMoistures;
 
-         float maxSpreadRate = 0.0;
-         float ellipseEccentricity = 0.0;
-         float spreadDirection = 0.0;
-         float spreadModifier = 0.0;
-         vec3 timeLagClass;
-
          // Get data into vars
+         // cout << deadSAVBurnableBuffer[fuelModel].x << " " << 
+         //         deadSAVBurnableBuffer[fuelModel].y << " " <<
+         //         deadSAVBurnableBuffer[fuelModel].z << " " <<
+         //         deadSAVBurnableBuffer[fuelModel].w << endl;
          deadSAVBurnable = deadSAVBurnableBuffer[fuelModel];
+         // cout << deadSAVBurnable.x << " " << 
+         //         deadSAVBurnable.y << " " <<
+         //         deadSAVBurnable.z << " " <<
+         //         deadSAVBurnable.w << endl;
          if(deadSAVBurnable.w < 50.0){
+            cout << "skipping" << endl;
             continue;
          }
+
 
          dead1h = dead1hBuffer[fuelModel];
          dead10h = dead10hBuffer[fuelModel];
          dead100h = dead100hBuffer[fuelModel];
          liveH = liveHBuffer[fuelModel];
          liveW = liveWBuffer[fuelModel];
-         fineDeadExtinctionsDensity = fineDeadExctinctionsDensityBuffer[fuelModel];
+         fineDeadExtinctionsDensity = fineDeadExtinctionsDensityBuffer[fuelModel];
          areasReactionFactors = areasReactionFactorsBuffer[fuelModel];
          slopeWindFactors = slopeWindFactorsBuffer[fuelModel];
          residenceFluxLiveSAV = residenceFluxLiveSAVBuffer[fuelModel];
@@ -391,8 +518,14 @@ void fireSim::updateSpreadData(){
 
          slopeAspectElevation = slopeAspectElevationTexture[i][j];
          wind = windTexture[i][j];
-         deadMoistures = deadMoisturesTexture[i][j];
-         liveMoistures = liveMoisturesTexture[i][j];
+         deadMoistures = deadMoisturesTexture[fuelModel];
+         liveMoistures = liveMoisturesTexture[fuelModel];
+
+         float maxSpreadRate = 0.;
+         float ellipseEccentricity = 0.;
+         float spreadDirection = 0.;
+         float spreadModifier = 0.;
+         vec3 timeLagClass;
 
 
          if (deadSAVBurnable.x > 192.0)
@@ -427,6 +560,9 @@ void fireSim::updateSpreadData(){
          fuelMoistures[2] = timeLagClass.z;
          fuelMoistures[3] = liveMoistures.x;
          fuelMoistures[4] = liveMoistures.y;
+         // for(int c = 0; c < 5; c++){
+         //    cout << fuelMoistures[c] << endl;
+         // }
 
          float liveExtinction = 0.0;
          if(liveH.y > 0.0 || liveW.y > 0.0){
@@ -478,8 +614,10 @@ void fireSim::updateSpreadData(){
 
             float heatPerUnitArea = reactionIntensity * residenceFluxLiveSAV.x;
             float baseSpreadRate = 0.0;
+
             if (heatOfIgnition > 0.0)
                baseSpreadRate = reactionIntensity * residenceFluxLiveSAV.y / heatOfIgnition;
+            // cout << "baseSpreadRate" << baseSpreadRate << endl;
             
             float slopeFactor = slopeWindFactors.x * slopeAspectElevation.x * slopeAspectElevation.x;
             float windFactor = 0.0;
@@ -487,7 +625,7 @@ void fireSim::updateSpreadData(){
                windFactor = slopeWindFactors.y * pow(wind.x, slopeWindFactors.z);
 
             spreadModifier = slopeFactor + windFactor;
-            
+            // cout << slopeFactor << " " << windFactor << endl;
             float upslope;
             if (slopeAspectElevation.y >= 180.0)
                upslope = slopeAspectElevation.y - 180.0;
@@ -501,11 +639,13 @@ void fireSim::updateSpreadData(){
             {
                maxSpreadRate = 0.0;
                spreadDirection = 0.0;
+b
             }
             else if (spreadModifier <= 0.0)
             {
                maxSpreadRate = baseSpreadRate;
                spreadDirection = 0.0;
+b
             }
             else if (slopeAspectElevation.x <= 0.0)
             {
@@ -513,6 +653,7 @@ void fireSim::updateSpreadData(){
                maxSpreadRate = baseSpreadRate * (1.0 + spreadModifier);
                spreadDirection = wind.y;
                checkEffectiveWindspeed = 1;
+// b
             }
             else if (wind.x <= 0.0)
             {
@@ -520,6 +661,7 @@ void fireSim::updateSpreadData(){
                spreadDirection = upslope;
                updateEffectiveWindspeed = 1;
                checkEffectiveWindspeed = 1;
+b
             }
             else if (fabs(wind.y - upslope) < 0.000001)
             {
@@ -527,6 +669,7 @@ void fireSim::updateSpreadData(){
                spreadDirection = upslope;
                updateEffectiveWindspeed = 1;
                checkEffectiveWindspeed = 1;
+b
             }
             else
             {
@@ -544,6 +687,7 @@ void fireSim::updateSpreadData(){
                maxSpreadRate = baseSpreadRate + addedSpeed;
 
                spreadModifier = maxSpreadRate / baseSpreadRate - 1.0;
+               // cout << "spreadmoid: " << spreadModifier << endl;
                if (spreadModifier > 0.0)
                   updateEffectiveWindspeed = 1;
                checkEffectiveWindspeed = 1;
@@ -569,6 +713,8 @@ void fireSim::updateSpreadData(){
                spreadDirection = upslope + angleOffset * 180.0 / 3.14159;
                if (spreadDirection > 360.0)
                   spreadDirection -= 360.0;
+b
+
             }
 
             if (updateEffectiveWindspeed == 1)
@@ -607,15 +753,15 @@ void fireSim::updateSpreadData(){
             //                       ellipseEccentricity, spreadDirection, intensityModifier);
 
             rothData[i][j].x = maxSpreadRate;
-            cout << maxSpreadRate;
+            // cout << maxSpreadRate;
             rothData[i][j].y = spreadDirection;
-            cout << spreadDirection;
+            // cout << spreadDirection;
             rothData[i][j].z = ellipseEccentricity;
-            cout << ellipseEccentricity << endl;
+            // cout << ellipseEccentricity << endl;
 
       }
    }
-   
+   // cout << counter << endl;
 }
 
 /*

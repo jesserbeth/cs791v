@@ -25,11 +25,17 @@ int main(){
     // vars
     std::ofstream fout;
     // int totalTime = 100;
-    for(int T = 2048; T < 2049; T<<=1){
-    // for(int T = 64; T < 70; T<<=1){
+    // for(int T = 1024; T < 1025; T<<=1){
+    for(int T = 256; T < 257; T<<=1){
         std::cout << "T: " << T << std::endl;
     // fout.open("test.csv");
     struct timeval start, fin;
+
+    // ROTHERMEL CONSTANTS
+    float maxSpreadRate = 10.8522;
+    float spreadDirection = 10;
+    float ellipseEccentricity = 0.233421;
+
 
 
     float timeStep = .5;
@@ -79,7 +85,7 @@ int main(){
     //         std::cout << std::endl;
     // }
     int row, col, cell, ncell, ncol, nrow;
-    float cellSize = 10;
+    float cellSize = 30;
     float orthoSize = cellSize;
     float diagSize = cellSize * sqrt(2);
     float superSize = sqrt(pow(cellSize, 2) + pow(cellSize*2, 2));
@@ -225,7 +231,8 @@ int main(){
 
     char threadNum[21];
     sprintf(threadNum, "_%d", T);
-    char f_name[] = "data_MT";
+    // char f_name[] = "data_MT";
+    char f_name[] = "roth_test";
     char csv[] = ".csv";
     strcat(f_name,threadNum);
     strcat(f_name,csv);
@@ -261,8 +268,10 @@ int main(){
                         if(ignTime[ncell] > timeNow){
                             // compute ignition time
                             // ROS = blah blah
-                            ROS = .4 * (1.0 - .6)/(1 - .6 * cos(angle[n]));
-
+                            // ROS = .4 * (1.0 - .6)/(1 - .6 * cos(angle[n]));
+                            ROS = maxSpreadRate * (1.0 - ellipseEccentricity) / 
+                                  (1.0 - ellipseEccentricity* cos(spreadDirection * pi/180));
+                            // std::cout << ROS << std::endl;
                             float ignTimeNew = timeNow + L_n[n] / ROS;
 
                             if(ignTimeNew < ignTime[ncell]){

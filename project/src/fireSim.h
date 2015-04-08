@@ -11,7 +11,7 @@ class point{
       point(){
          x = 0;
          y = 0;
-      };
+      }
       int x;
       int y;
 };
@@ -19,55 +19,61 @@ class point{
 class vec2{
    public: 
       vec2(){
-         x = y = 0;
-      };
+         x = y = -1;
+      }
       vec2(float _x, float _y){
          x = _x;
          y = _y;
-      };
+      }
       vec2 operator=(const vec2& vector){
-         float _x = vector.x;
-         float _y = vector.y;
-         return vec2(_x,_y);
-      };
+         if(this == &vector)
+            return *this;
+         x = vector.x;
+         y = vector.y;
+         return *this;
+      }
       float x,y;
 };
 class vec3{
    public: 
       vec3(){
-         x = y = z = 0;
-      };
+         x = y = z = -1;
+      }
       vec3(float _x, float _y, float _z){
          x = _x;
          y = _y;
          z = _z;
-      };
+      }
       vec3 operator=(const vec3& vector){
-         float _x = vector.x;
-         float _y = vector.y;
-         float _z = vector.z;
-         return vec3(_x,_y,_z);
-      };
+         if(this == &vector)
+            return *this;
+         x = vector.x;
+         y = vector.y;
+         z = vector.z;
+         return *this;
+      }
       float x,y,z;
 };
 class vec4{
    public: 
       vec4(){
-         x = y = z = w = 0;
-      };
+         x = y = z = w = -1;
+      }
       vec4(float _x, float _y, float _z, float _w){
          x = _x;
          y = _y;
          z = _z;
          w = _w;
-      };
+      }
       vec4 operator=(const vec4& vector){
-         float _x = vector.x;
-         float _y = vector.y;
-         float _z = vector.z;
-         float _w = vector.w;
-         return vec4(_x,_y,_z,_w);
-      };
+         if(this == &vector)
+            return *this;
+         x = vector.x;
+         y = vector.y;
+         z = vector.z;
+         w = vector.w;
+         return *this;
+      }
       float x,y,z,w;
 };
 
@@ -120,7 +126,7 @@ class fireSim{
       float* outputSourceData;
 
       // Rothermel Data Members
-      float** fuelTexture;
+      int** fuelTexture;
       vec4*  deadSAVBurnableBuffer;
       vec4*  dead1hBuffer;
       vec4*  dead10hBuffer;
@@ -135,8 +141,8 @@ class fireSim{
       // Roth textures
       vec3** slopeAspectElevationTexture;
       vec2** windTexture;
-      vec3** deadMoisturesTexture;
-      vec2** liveMoisturesTexture;
+      vec3* deadMoisturesTexture;
+      vec2* liveMoisturesTexture;
 
       int simDimX;
       int simDimY;
