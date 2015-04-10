@@ -2,7 +2,11 @@
 #include <vector>
 #include "FuelModel.h"
 #include "FuelMoisture.h"
-
+#include <string>
+// Include gdal libraries to parse .dem files
+#include <gdal.h>
+#include <gdal_priv.h>
+#include <cpl_conv.h>
 
 using namespace std;
 
@@ -90,7 +94,8 @@ class fireSim{
       float clamp(float, float, float);
 
       float* accelerate(float*, float*, float);
-      float testCrownRate(float,float,float,float,float);
+      float testCrownRate(float, float, float, float, float);
+      void setSimSize(int, int);
 
    // private: 
 
@@ -125,8 +130,14 @@ class fireSim{
       int timeStamp;
       float* outputSourceData;
 
+      // Simulation members from test Sim
+      float timeNow;
+      float timeNext;
+      float* ignTime;
+
+
       // Rothermel Data Members
-      int** fuelTexture;
+      int* fuelTexture;
       vec4*  deadSAVBurnableBuffer;
       vec4*  dead1hBuffer;
       vec4*  dead10hBuffer;
@@ -139,10 +150,12 @@ class fireSim{
       vec4*  residenceFluxLiveSAVBuffer;
       vec2*  fuelSAVAccelBuffer;
       // Roth textures
-      vec3** slopeAspectElevationTexture;
+      vec3* slopeAspectElevationTexture;
       vec2** windTexture;
       vec3* deadMoisturesTexture;
       vec2* liveMoisturesTexture;
+      char* fuelTextureFile;
+      char* slopeAspectElevationTextureFile;
 
       int simDimX;
       int simDimY;

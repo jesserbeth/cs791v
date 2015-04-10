@@ -3,11 +3,18 @@
 #include <math.h>
 
 
+const int INF = 9999999;
+
 #define b printf("%u\n", __LINE__);
 
 /* neighbor's address*/     /* N  NE   E  SE   S  SW   W  NW */
 static int nCol[8] =        {  0,  1,  1,  1,  0, -1, -1, -1};
 static int nRow[8] =        {  1,  1,  0, -1, -1, -1,  0,  1};
+
+
+template<typename T> T* GISToFloatArray(char*, int, int);
+template int* GISToFloatArray<int>(char*, int, int);
+template float* GISToFloatArray<float>(char*, int, int);
 
 /*
 Constructor: builds simplest test case for testing code
@@ -16,8 +23,8 @@ fireSim::fireSim(){
    std::cout << "Initializing Simulation to Test Setting" << std::endl;
 
    // declare 2d map data
-   int sizeX = 10;
-   int sizeY = 10;
+   int sizeX = 256;
+   int sizeY = 256;
 
    simDimX = sizeX;
    simDimY = sizeY;
@@ -47,7 +54,9 @@ fireSim::fireSim(){
    spreadData = new float*[simDimX];
 
    // rothermel vals
-   fuelTexture = new int*[simDimX];
+   // fuelTexture = new int[simDimX*simDimY];
+   fuelTexture = NULL;
+   slopeAspectElevationTexture = new vec3[simDimX*simDimY];
 
    deadSAVBurnableBuffer = new vec4[numModels];
    dead1hBuffer = new vec4[numModels];
@@ -61,7 +70,6 @@ fireSim::fireSim(){
    residenceFluxLiveSAVBuffer = new vec4[numModels];
    fuelSAVAccelBuffer = new vec2[numModels];
 
-   slopeAspectElevationTexture = new vec3*[simDimX];
    windTexture = new vec2*[simDimX];
    deadMoisturesTexture = new vec3[numMoistModels];
    liveMoisturesTexture = new vec2[numMoistModels];
@@ -70,7 +78,7 @@ fireSim::fireSim(){
    for(int i = 0; i < simDimX; i++){
       timeOfArrival[i] = new float[simDimY];
       rothData[i] = new vec4[simDimY];
-      fuelTexture[i] = new int[simDimY];
+      // fuelTexture[i] = new int[simDimY];
       originalTimeOfArrival[i] = new float[simDimY];
       orthoSpreadRate[i] = new vec4[simDimY];
       diagSpreadRate[i] = new vec4[simDimY];
@@ -99,7 +107,7 @@ fireSim::fireSim(){
       // slopeWindFactorsBuffer[i] = new vec4[simDimY];
       // residenceFluxLiveSAVBuffer[i] = new vec4[simDimY];
       // fuelSAVAccelBuffer[i] = new vec2[simDimY];
-      slopeAspectElevationTexture[i] = new vec3[simDimY];
+      // slopeAspectElevationTexture[i] = new vec3[simDimY];
       windTexture[i] = new vec2[simDimY];
       // deadMoisturesTexture[i] = new vec3[simDimY];
       // liveMoisturesTexture[i] = new vec2[simDimY];
@@ -112,13 +120,23 @@ fireSim::fireSim(){
    currentStamp = 0.;
    accelerationConstant = 1.0;
 
+   // char* tmp[10] = "fixed.fuel";
+   // strcpy(fuelTextureFile, tmp);
+   fuelTextureFile = new char[18];
+   fuelTextureFile = "../data/fixed.fuel";
+   slopeAspectElevationTextureFile = new char[17];
+   slopeAspectElevationTextureFile = "../data/fixed.dem";
+
    // outputTOA;
    // outputOrthoRates;
    // outputDiagRates;
    // timeStamp;
    // outputSourceData; 
 
-   // Populate FuelModel
+   // Simulation Data Members
+   timeNow = 0.0;
+   timeNext = 0.0;
+   ignTime = new float[simDimX*simDimY];
 }
 
 /*
@@ -126,8 +144,8 @@ Destructor: builds simplest test case for testing code
 */
 fireSim::~fireSim(){
    // delete all memory: need to be more clever with more complex sims
-   int sizeX = 100;
-   int sizeY = 100;
+   int sizeX = 256;
+   int sizeY = 256;
 
    // blah blah
       // std::cout << "Deallocating memory" << std::endl;
@@ -223,11 +241,19 @@ Shader base: rothermel
 Purpose: Initializes the sim. 
 */
 void fireSim::init(){
+   // read from files:
+   int cell = 0;
+   float* slopeTexTmp = NULL;
+   GDALAllRegister();
+   fuelTexture = GISToFloatArray<int>(fuelTextureFile, simDimX, simDimY);
+   slopeTexTmp = GISToFloatArray<float>(slopeAspectElevationTextureFile, simDimX*3, simDimY*3);
+
+
    for(int i = 0; i < simDimX; i++){
-      for(int j = 0; j < simDimY; j++){
+      for(int j = 0; j < simDimY; j++, cell++){
          timeOfArrival[i][j] = 20.;
          rothData[i][j].x = rothData[i][j].y = rothData[i][j].z = 0.;
-         fuelTexture[i][j] = 0.;
+         // fuelTexture[i][j] = 0.;
          originalTimeOfArrival[i][j] = 20.;
          orthoSpreadRate[i][j].x = orthoSpreadRate[i][j].y = orthoSpreadRate[i][j].z = orthoSpreadRate[i][j].w = 1.;
          diagSpreadRate[i][j].x = diagSpreadRate[i][j].y = diagSpreadRate[i][j].z = diagSpreadRate[i][j].w = 1.;
@@ -257,133 +283,95 @@ void fireSim::init(){
    //       slopeWindFactorsBuffer[i][j].x = slopeWindFactorsBuffer[i][j].y = slopeWindFactorsBuffer[i][j].z = slopeWindFactorsBuffer[i][j].w = 1.;
    //       residenceFluxLiveSAVBuffer[i][j].x = residenceFluxLiveSAVBuffer[i][j].y = residenceFluxLiveSAVBuffer[i][j].z = residenceFluxLiveSAVBuffer[i][j].w = 1.;
    //       fuelSAVAccelBuffer[i][j].x = fuelSAVAccelBuffer[i][j].y = 1.;
-         slopeAspectElevationTexture[i][j].x = slopeAspectElevationTexture[i][j].y = slopeAspectElevationTexture[i][j].z = 0.;
-         windTexture[i][j].x = windTexture[i][j].y = 10.;
+         // slopeAspectElevationTexture[i][j].x = slopeAspectElevationTexture[i][j].y = slopeAspectElevationTexture[i][j].z = 0.;
+         windTexture[i][j].x = windTexture[i][j].y = 0.;
    //       deadMoisturesTexture[i][j].x = deadMoisturesTexture[i][j].y = deadMoisturesTexture[i][j].z = 1.;
    //       liveMoisturesTexture[i][j].x = liveMoisturesTexture[i][j].y = 1.;
    //       // cout << "test" << endl;
 
+         slopeAspectElevationTexture[cell].x = slopeTexTmp[3*cell];
+         slopeAspectElevationTexture[cell].y = slopeTexTmp[3*cell+1];
+         slopeAspectElevationTexture[cell].z = slopeTexTmp[3*cell+2];
+         // cout << slopeAspectElevationTexture[cell].x << ' ' << endl;
+         ignTime[cell] = INF;
+
       }
    }
    spreadData[5][5] = 100;
-   // cout << "HERE" << endl;
+   int ignSpot = simDimX * simDimY / 2 + simDimY / 2;
+   ignTime[ignSpot] = 0;
 
-   // Attempting to read from fuelModel obj. into mine
-   // ContextData* cd = new ContextData();
-   // int numModels = _models.size();
-   // float* dead1hData = new float[numModels * 4];
-   // float* dead10hData = new float[numModels * 4];
-   // float* dead100hData = new float[numModels * 4];
-   // float* liveHData = new float[numModels * 4];
-   // float* liveWData = new float[numModels * 4];
-   // float* fineDeadExtinctionsDensityData = new float[numModels * 4];
-   // float* areasReactionFactorsData = new float[numModels * 4];
-   // float* slopeWindFactorsData = new float[numModels * 4];
-   // float* residenceFluxLiveSAVData = new float[numModels * 4];
-   // float* deadSAVBurnableData = new float[numModels * 4];
-   // float* fuelSAVAccelData = new float[numModels * 4];
 
-   // {
-      // float* dead1h = dead1hData;
-      // float* dead10h = dead10hData;
-      // float* dead100h = dead100hData;
-      // float* liveH = liveHData;
-      // float* liveW = liveWData;
-      // float* fineDeadExtinctionsDensity = fineDeadExtinctionsDensityData;
-      // float* areasReactionFactors = areasReactionFactorsData;
-      // float* slopeWindFactors = slopeWindFactorsData;
-      // float* residenceFluxLiveSAV = residenceFluxLiveSAVData;
-      // float* deadSAVBurnable = deadSAVBurnableData;
-      // float* fuelSAVAccel = fuelSAVAccelData;
-      int i = 0;
-      for (std::vector<sim::FuelModel>::iterator it = _models.begin(); 
-           it != _models.end(); it++, i++)
-      {
-         dead1hBuffer[i].x = it->effectiveHeatingNumber[sim::Dead1h];
-         dead1hBuffer[i].y = it->load[sim::Dead1h];
-         dead1hBuffer[i].z = it->areaWeightingFactor[sim::Dead1h];
-         dead1hBuffer[i].w = it->fuelMoisture[sim::Dead1h];
-         
-         dead10hBuffer[i].x = it->effectiveHeatingNumber[sim::Dead10h];
-         dead10hBuffer[i].y = it->load[sim::Dead10h];
-         dead10hBuffer[i].z = it->areaWeightingFactor[sim::Dead10h];
-         dead10hBuffer[i].w = it->fuelMoisture[sim::Dead10h];
-         
-         dead100hBuffer[i].x = it->effectiveHeatingNumber[sim::Dead100h];
-         dead100hBuffer[i].y = it->load[sim::Dead100h];
-         dead100hBuffer[i].z = it->areaWeightingFactor[sim::Dead100h];
-         dead100hBuffer[i].w = it->fuelMoisture[sim::Dead100h];
-         
-         liveHBuffer[i].x = it->effectiveHeatingNumber[sim::LiveH];
-         liveHBuffer[i].y = it->load[sim::LiveH];
-         liveHBuffer[i].z = it->areaWeightingFactor[sim::LiveH];
-         liveHBuffer[i].w = it->fuelMoisture[sim::LiveH];
-         
-         liveWBuffer[i].x = it->effectiveHeatingNumber[sim::LiveW];
-         liveWBuffer[i].y = it->load[sim::LiveW];
-         liveWBuffer[i].z = it->areaWeightingFactor[sim::LiveW];
-         liveWBuffer[i].w = it->fuelMoisture[sim::LiveW];
+   int i = 0;
+   for (std::vector<sim::FuelModel>::iterator it = _models.begin(); 
+        it != _models.end(); it++, i++)
+   {
+      dead1hBuffer[i].x = it->effectiveHeatingNumber[sim::Dead1h];
+      dead1hBuffer[i].y = it->load[sim::Dead1h];
+      dead1hBuffer[i].z = it->areaWeightingFactor[sim::Dead1h];
+      dead1hBuffer[i].w = it->fuelMoisture[sim::Dead1h];
+      
+      dead10hBuffer[i].x = it->effectiveHeatingNumber[sim::Dead10h];
+      dead10hBuffer[i].y = it->load[sim::Dead10h];
+      dead10hBuffer[i].z = it->areaWeightingFactor[sim::Dead10h];
+      dead10hBuffer[i].w = it->fuelMoisture[sim::Dead10h];
+      
+      dead100hBuffer[i].x = it->effectiveHeatingNumber[sim::Dead100h];
+      dead100hBuffer[i].y = it->load[sim::Dead100h];
+      dead100hBuffer[i].z = it->areaWeightingFactor[sim::Dead100h];
+      dead100hBuffer[i].w = it->fuelMoisture[sim::Dead100h];
+      
+      liveHBuffer[i].x = it->effectiveHeatingNumber[sim::LiveH];
+      liveHBuffer[i].y = it->load[sim::LiveH];
+      liveHBuffer[i].z = it->areaWeightingFactor[sim::LiveH];
+      liveHBuffer[i].w = it->fuelMoisture[sim::LiveH];
+      
+      liveWBuffer[i].x = it->effectiveHeatingNumber[sim::LiveW];
+      liveWBuffer[i].y = it->load[sim::LiveW];
+      liveWBuffer[i].z = it->areaWeightingFactor[sim::LiveW];
+      liveWBuffer[i].w = it->fuelMoisture[sim::LiveW];
 
-         fineDeadExtinctionsDensityBuffer[i].x = it->fineDeadRatio;
-         fineDeadExtinctionsDensityBuffer[i].y = it->extinctionMoisture;
-         fineDeadExtinctionsDensityBuffer[i].z = it->liveExtinction;
-         fineDeadExtinctionsDensityBuffer[i].w = it->fuelDensity;
+      fineDeadExtinctionsDensityBuffer[i].x = it->fineDeadRatio;
+      fineDeadExtinctionsDensityBuffer[i].y = it->extinctionMoisture;
+      fineDeadExtinctionsDensityBuffer[i].z = it->liveExtinction;
+      fineDeadExtinctionsDensityBuffer[i].w = it->fuelDensity;
 
-         areasReactionFactorsBuffer[i].x = it->deadArea;
-         areasReactionFactorsBuffer[i].y = it->liveArea;
-         areasReactionFactorsBuffer[i].z = it->deadReactionFactor;
-         areasReactionFactorsBuffer[i].w = it->liveReactionFactor;
+      areasReactionFactorsBuffer[i].x = it->deadArea;
+      areasReactionFactorsBuffer[i].y = it->liveArea;
+      areasReactionFactorsBuffer[i].z = it->deadReactionFactor;
+      areasReactionFactorsBuffer[i].w = it->liveReactionFactor;
 
-         slopeWindFactorsBuffer[i].x = it->slopeK;
-         slopeWindFactorsBuffer[i].y = it->windK;
-         slopeWindFactorsBuffer[i].z = it->windB;
-         slopeWindFactorsBuffer[i].w = it->windE;
+      slopeWindFactorsBuffer[i].x = it->slopeK;
+      slopeWindFactorsBuffer[i].y = it->windK;
+      slopeWindFactorsBuffer[i].z = it->windB;
+      slopeWindFactorsBuffer[i].w = it->windE;
 
-         residenceFluxLiveSAVBuffer[i].x = it->residenceTime;
-         residenceFluxLiveSAVBuffer[i].y = it->propagatingFlux;
-         residenceFluxLiveSAVBuffer[i].z = it->SAV[sim::LiveH];
-         residenceFluxLiveSAVBuffer[i].w = it->SAV[sim::LiveW];
+      residenceFluxLiveSAVBuffer[i].x = it->residenceTime;
+      residenceFluxLiveSAVBuffer[i].y = it->propagatingFlux;
+      residenceFluxLiveSAVBuffer[i].z = it->SAV[sim::LiveH];
+      residenceFluxLiveSAVBuffer[i].w = it->SAV[sim::LiveW];
 
-         deadSAVBurnableBuffer[i].x = it->SAV[sim::Dead1h];
-         deadSAVBurnableBuffer[i].y = it->SAV[sim::Dead10h];
-         deadSAVBurnableBuffer[i].z = it->SAV[sim::Dead100h];
-         // deadSAVBurnableBuffer[i].w = it->burnable? 100.0f : 0.0f;
-         deadSAVBurnableBuffer[i].w = 100.0f;
+      deadSAVBurnableBuffer[i].x = it->SAV[sim::Dead1h];
+      deadSAVBurnableBuffer[i].y = it->SAV[sim::Dead10h];
+      deadSAVBurnableBuffer[i].z = it->SAV[sim::Dead100h];
+      // deadSAVBurnableBuffer[i].w = it->burnable? 100.0f : 0.0f;
+      deadSAVBurnableBuffer[i].w = 100.0f;
 
-         fuelSAVAccelBuffer[i].x = it->fuelSAV;
-         fuelSAVAccelBuffer[i].y = it->accelerationConstant;
-      }
-   // }
-      // for(int i = 0; i < _models.size(); i++){
-      //    cout << slopeWindFactorsBuffer[i].x << " " <<
-      //            slopeWindFactorsBuffer[i].y << " " <<
-      //            slopeWindFactorsBuffer[i].z << " " <<
-      //            slopeWindFactorsBuffer[i].w << endl;
-      // }
+      fuelSAVAccelBuffer[i].x = it->fuelSAV;
+      fuelSAVAccelBuffer[i].y = it->accelerationConstant;
+   }
 
-      // double y = _bottom;
-      // for (int row = 0; row < _rows; ++row, y += _cellsize)
-      // {
-      //    double x = _left;
-      //    for (int col = 0; col < _cols; ++ col, x += _cellsize)
-      //    {
-            // int offset = (row * _cols + col) * 4;
-            // int fuelModel = _database->fuelMap->getGeoCell(x, y);
-      i = 0;
-      for (std::vector<sim::FuelMoisture>::iterator it = _moistures.begin(); 
-           it != _moistures.end(); it++, i++)
-      {
-            // FuelMoisture& moisture = _moistures[fuelModel];
-            
-            deadMoisturesTexture[i].x = it->dead1h;
-            deadMoisturesTexture[i].y = it->dead10h;
-            deadMoisturesTexture[i].z = it->dead100h;
+   i = 0;
+   for (std::vector<sim::FuelMoisture>::iterator it = _moistures.begin(); 
+        it != _moistures.end(); it++, i++)
+   {         
+         deadMoisturesTexture[i].x = it->dead1h;
+         deadMoisturesTexture[i].y = it->dead10h;
+         deadMoisturesTexture[i].z = it->dead100h;
 
-            liveMoisturesTexture[i].x = it->liveH;
-            liveMoisturesTexture[i].y = it->liveW;
-      //    }
-      // }
-      }
+         liveMoisturesTexture[i].x = it->liveH;
+         liveMoisturesTexture[i].y = it->liveW;
+   }
 
 
    // float* deadMoistures = new float[_numCells * 4];
@@ -414,43 +402,6 @@ void fireSim::init(){
 }
 
 /*
-   NOTES FOR HOW I GOT THE DATA D: 
-      Data I need                   Place I get it          (how it is produced)
-      deadXh, liveX:                effectiveHeatingNumber  (calculated in fuelmodel)
-                                    load                    (from .fmd)
-                                    areaWeightingFactor     (calculated in fuelmodel)
-                                    FuelMoisture            (all zeros)
-      
-      fineDeadExctinctionDensity:   fineDeadRatio           (calculated in fuelmodel)
-                                    extinctionMoisture      (from .fmd)
-                                    liveExtinction          (calculated in fuelmodel)
-                                    fuelDensity             (calculated in fuelmodel)
-
-      areasReactionFactors:         deadArea                (calculated in fuelmodel)
-                                    liveArea                (calculated in fuelmodel)
-                                    deadReactionFactor      (calculated in fuelmodel)
-                                    liveReactionFactor      (calculated in fuelmodel)
-
-      slopeWindFactors:             slopeK                  (calculated in fuelmodel)
-                                    windK                   (calculated in fuelmodel)
-                                    windB                   (calculated in fuelmodel)
-                                    windE                   (calculated in fuelmodel)
-
-      residenceFluxLiveSAV:         residenceTime           (calculated in fuelmodel)
-                                    propagatingFlux         (calculated in fuelmodel)
-                                    SAV                     (from .fmd)
-                                    SAV                     (from .fmd)
-
-      deadSAVBurnable:              SAV                     (from .fmd)
-                                    SAV                     (from .fmd)
-                                    SAV                     (from .fmd)
-                                    burnable                (always true)           
-
-      fuelSAVAccel:                 fuelSAV                 (calculated in fuelmodel)
-                                    accelerationConstant    (0.115)
-*/
-
-/*
 Function: updateSpreadData
 Input: The necessary inputs are the values that are found in the textures/buffers
        in the FuelModel.h/Simulator.cpp files in Roger's code
@@ -459,7 +410,9 @@ Purpose: This runs rothermel's equations to initialize simulation
 */
 void fireSim::updateSpreadData(){
    // This is where rothermel's shader is implemented
-   int    nrow, ncol, ncell;   /* row, col, and index of neighbor cell */
+
+   cout << "Updating Spread Data . . ." << endl;
+   int cell;   /* row, col, and index of neighbor cell */
    float dist = 10.;
    int counter = 0;
       // for(int i = 0; i < _models.size(); i++){
@@ -469,13 +422,14 @@ void fireSim::updateSpreadData(){
       // }
    
    for(int i = 0; i < simDimX; i++){
-      for(int j = 0; j < simDimY; j++){
+      for(int j = 0; j < simDimY; j++, cell++){
          // Shader code: int fuelModel = texture2D(fuelTexture, gl_TexCoord[1].st).r;
             // gl_TexCoord[1].st corresponds to fuelTexture.xy
-         int fuelModel = fuelTexture[i][j];
+         // int fuelModel = fuelTexture[cell];
+         // cout << "FUEL MODEL " << fuelModel << endl;
 
-         // FOR TESTING
-         fuelModel = 1;
+         // FOR TESTING: Must fix interpolation of fuelModel data
+         int fuelModel = 1;
 
          vec4 dead1h, deadSAVBurnable, dead10h, dead100h, liveH, 
               liveW, fineDeadExtinctionsDensity, areasReactionFactors,
@@ -516,7 +470,7 @@ void fireSim::updateSpreadData(){
          float fuelSAV = fuelSAVAccel.x;
          float accelerationConstant = fuelSAVAccel.y;
 
-         slopeAspectElevation = slopeAspectElevationTexture[i][j];
+         slopeAspectElevation = slopeAspectElevationTexture[cell];
          wind = windTexture[i][j];
          deadMoistures = deadMoisturesTexture[fuelModel];
          liveMoistures = liveMoisturesTexture[fuelModel];
@@ -526,6 +480,7 @@ void fireSim::updateSpreadData(){
          float spreadDirection = 0.;
          float spreadModifier = 0.;
          vec3 timeLagClass;
+         cout << "past" << endl;
 
 
          if (deadSAVBurnable.x > 192.0)
@@ -769,7 +724,7 @@ Function: propagateFire
 Input: TBD
 Shader base: propagateAccel
 Purpose: 
-*/
+
 void fireSim::propagateFire(){
    // must loop through all points in lattice
    for(int i = 0; i < simDimX; i++){ // loop through rows
@@ -1135,7 +1090,7 @@ void fireSim::propagateFire(){
 
       }
    }
-}
+}*/
 
 /*
 Function: burnDistance
@@ -1267,3 +1222,118 @@ float fireSim::clamp(float val, float flr, float ceiling){
    }
    return ceiling;
 }
+
+
+/*
+Function: setSimSize
+Input: height,width of grid for testing
+Purpose: allows size to be set for generation of data in simulation tests
+*/
+void fireSim::setSimSize(int x, int y){
+   simDimX = x;
+   simDimY = y;
+}
+
+
+/*
+Function: accelerate
+Input: TBD
+Purpose: run acceleration code
+*/
+template<typename T>
+T* GISToFloatArray(char* fname, int interpWidth, int interpHeight)
+{
+  // Important note ------ Gdal considers images to be north up
+  // the origin of datasets takes place in the upper-left or North-West corner.
+  // Now to create a GDAL dataset
+  auto ds = ((GDALDataset*) GDALOpen(fname,GA_ReadOnly));
+  if(ds == NULL)
+  {
+    return NULL;
+  }
+  
+  // Creating a Raster band variable
+  // A band represents one whole dataset within a dataset
+  // in your case your files have one band.
+  GDALRasterBand  *poBand;
+  int             nBlockXSize, nBlockYSize;
+  int             bGotMin, bGotMax;
+  double          adfMinMax[2];
+  
+  // Assign the band      
+  poBand = ds->GetRasterBand( 1 );
+  poBand->GetBlockSize( &nBlockXSize, &nBlockYSize );
+
+  // find the min and max
+  adfMinMax[0] = poBand->GetMinimum( &bGotMin );
+  adfMinMax[1] = poBand->GetMaximum( &bGotMax );
+  if( ! (bGotMin && bGotMax) )
+    GDALComputeRasterMinMax((GDALRasterBandH)poBand, TRUE, adfMinMax);
+  int min = adfMinMax[0];
+  int max = adfMinMax[1];
+
+  // get the width and height of the band or dataset
+  int width = poBand->GetXSize();
+  int height = poBand->GetYSize();
+
+  // GDAL can handle files that have multiple datasets jammed witin it
+  int bands = ds->GetRasterCount();
+
+  // the float variable to hold the DEM!
+  T *pafScanline;
+  std::cout << "Min: " << adfMinMax[0] << " Max: " << adfMinMax[1] << endl;
+  int dsize = 256;
+  pafScanline = (T *) CPLMalloc(sizeof(T)*width*height);
+
+  // Lets acquire the data.  ..... this funciton will interpolate for you
+  // poBand->RasterIO(GF_Read,0,0,width,height,pafScanline,width,height,GDT_Float32,0,0);
+  poBand->RasterIO(GF_Read,0,0,width,height,pafScanline,interpWidth,interpHeight,GDT_Float32,0,0);
+  //        chage these two to interpolate automatically ^      ^
+
+  // The Geotransform gives information on where a dataset is located in the world
+  // and the resolution.
+  // for more information look at http://www.gdal.org/gdal_datamodel.html
+  double geot[6];
+  ds->GetGeoTransform(geot);
+
+  // Get the x resolution per pixel(south and west) and y resolution per pixel (north and south)
+  // float xres = geot[1];
+  // float yres = geot[5];
+  // string proj;
+  // proj = string(ds->GetProjectionRef());
+
+  // You can get the projection string
+  // The projection gives information about the coordinate system a dataset is in
+  // This is important to allow other GIS softwares to place datasets into the same
+  // coordinate space 
+  // char* test = &proj[0];
+
+  // The origin of the dataset 
+  // float startx = geot[0]; // east - west coord.
+  // float starty = geot[3]; // north - south coord.
+
+  
+  // here is some code that I used to push that 1D array into a 2D array
+  // I believe this puts everything in the correct order....
+  /*for(int i = 0; i < hsize; i++)
+  {
+    for(int j = 0; j < wsize; j++)
+    {
+      //cout << i << j << endl << pafS;
+      vecs[i][j] = pafScanline[((int)i)*(int)wsize+((int)j)];
+      if(vecs[i][j]>0 && vecs[i][j] > max)
+      {
+          max = vecs[i][j];
+      }
+      if(vecs[i][j]>0 && vecs[i][j] < min)
+      {
+          min = vecs[i][j];
+      }
+    }
+   }*/
+   //CPLFree(pafScanline);
+   return pafScanline;
+
+}
+
+

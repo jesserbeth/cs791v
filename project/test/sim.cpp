@@ -232,7 +232,7 @@ int main(){
     char threadNum[21];
     sprintf(threadNum, "_%d", T);
     // char f_name[] = "data_MT";
-    char f_name[] = "roth_test";
+    char f_name[] = "../out/test";
     char csv[] = ".csv";
     strcat(f_name,threadNum);
     strcat(f_name,csv);
