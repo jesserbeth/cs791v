@@ -18,7 +18,7 @@ CC= nvcc
 all: fireSim
 
 fireSim: simulation.cu fireSim.cpp 
-	$(CC) $^  $(CXXFLAGS) $@ $(LIBS) $(INCLUDES) -arch sm_20
+	$(CC) $^  $(CXXFLAGS) $@ $(LIBS) $(INCLUDES) -arch=sm_20
 
 clean:
 	rm -f *.o

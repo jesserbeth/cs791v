@@ -7,8 +7,8 @@
 # 	rm -f *.o
 # 	rm -f *~
 
-FILES= simulation.cpp fireSim.h fireSim.cpp FuelModel.h FuelMoisture.h
-CXXFLAGS= -g -Wall -std=c++11 -o 
+FILES= simulation.cpp fireSim.cpp
+CXXFLAGS= -g -Wall -o 
 SOURCE= fireSim
 INCLUDES= -I /usr/include/gdal/
 LIBS=  -L/usr/lib -lgdal

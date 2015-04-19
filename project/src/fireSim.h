@@ -83,7 +83,7 @@ class vec4{
 
 class fireSim{
    public: 
-      fireSim(); // this will set to default test state
+      fireSim(int _x = 100,int _y = 100); // this will set to default test state
       ~fireSim();
       void init();
       void updateSpreadData();
@@ -96,6 +96,7 @@ class fireSim{
       float* accelerate(float*, float*, float);
       float testCrownRate(float, float, float, float, float);
       void setSimSize(int, int);
+      float burnDistance(float, float, float);
 
    // private: 
 
@@ -134,6 +135,9 @@ class fireSim{
       float timeNow;
       float timeNext;
       float* ignTime;
+      float* ignTimeNew;
+      float** burnDist;
+      float* L_n;
 
 
       // Rothermel Data Members
@@ -159,6 +163,8 @@ class fireSim{
 
       int simDimX;
       int simDimY;
+      float cellSize;
+      float timeStep;
 
       std::vector<sim::FuelModel> _models;
       std::vector<sim::FuelMoisture> _moistures;

@@ -1,62 +1,74 @@
 #include <iostream>
 #include <fstream>
 #include "fireSim.h"
+#include <sys/time.h>
 
 const int INF = 9999999;
 
+#define PROFILE 1
+#define BURNDIST 0
+#define MT 0
+#define IMT 1
+
+// enum simulation_type {
+//    BURNDIST = 0,
+//    MT, 
+//    IMT
+// };
+
 int main(){
-   // Declare simulation variables
-   int cell, row, col, nrow, ncol, ncell;
-   std::ofstream fout;
+   for(int T = 64; T < 65; T<<=1){
+      // Declare simulation variables
+      int cell, row, col, nrow, ncol, ncell;
+      // char simType[20];
+      std::ofstream fout;
 
-   float cellSize = 30;
-   float orthoSize = cellSize;
-   float diagSize = cellSize * sqrt(2);
-   float superSize = sqrt(pow(cellSize, 2) + pow(cellSize*2, 2));
-   float pi = 3.14159;
-   float ROS = 0;
-   /* neighbor's address*/     /* N  NE   E  SE   S  SW   W  NW  NNW NNE NEE SEE SSE SSW SWW NWW*/
-   static int nCol[16] =        {  0,  1,  1,  1,  0, -1, -1, -1, -1, 1, 2, 2, 1, -1, -2, -2};
-   static int nRow[16] =        {  1,  1,  0, -1, -1, -1,  0,  1, 2, 2, 1, -1, -2, -2, -1, 1};
-   // static float angle[16] =     {   90, 45, 0, 45, 90, 45, 0, 45, 
-                                  // 26.57, 63.43, 26.57, 26.57, 63.43, 63.43, 26.57, 26.57};
-                                  // 27, 63, 27, 63, 27, 63, 27, 63};
-   static float angle[16] =     {   30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30};
-   static float L_n[16] =        { orthoSize, diagSize, orthoSize, diagSize, orthoSize, diagSize,
-                                 orthoSize, diagSize, superSize,superSize,superSize,superSize,
-                                 superSize,superSize,superSize,superSize};
+      // Initialize simulator
+      fireSim sim(T,T);
+      struct timeval start, fin;
+      float pi = 3.14159;
+      float ROS = 0;
+      float superSize = sqrt(pow(sim.cellSize, 2) + pow(sim.cellSize*2, 2));
+      /* neighbor's address*/     /* N  NE   E  SE   S  SW   W  NW  NNW NNE NEE SEE SSE SSW SWW NWW*/
+      static int nCol[16] =        {  0,  1,  1,  1,  0, -1, -1, -1, -1, 1, 2, 2, 1, -1, -2, -2};
+      static int nRow[16] =        {  1,  1,  0, -1, -1, -1,  0,  1, 2, 2, 1, -1, -2, -2, -1, 1};
+      
+      // 
+
+   #if PROFILE
+      gettimeofday(&start, NULL);
+      sim.init();
+      // End Timer
+      gettimeofday(&fin, NULL);
+      double t_init = fin.tv_usec + fin.tv_sec * 1000000.0;
+      t_init -= start.tv_usec + start.tv_sec * 1000000.0;
+      t_init /= 1000000.0;   
+      std::cout << "Processing init on " << sim.simDimX << " cells took " << t_init << " seconds" << std::endl;
+      
+      gettimeofday(&start, NULL);
+      sim.updateSpreadData();
+      // End Timer
+      gettimeofday(&fin, NULL);
+      double t_upSpread = fin.tv_usec + fin.tv_sec * 1000000.0;
+      t_upSpread -= start.tv_usec + start.tv_sec * 1000000.0;
+      t_upSpread /= 1000000.0;   
+      std::cout << "Processing updateSpreadData on " << sim.simDimX << " cells took " << t_upSpread << " seconds" << std::endl;
+   #else
+      sim.init();
+      sim.updateSpreadData();
+   #endif
 
 
-   // Initialize simulator
-   fireSim sim;
-   sim.init();
-   sim.updateSpreadData();
-   // float startTime = 1.0;
-   // float endTime = 10.0;
-   float stepTime = 2.0;
-
-   // Get data: right now it is test data
-
-   // // endTime = currentTime
-   // // startTime = lastUpdateTime
-   // // int counter = 0;
-   // // while (sim.startTime != endTime){
-   //    // counter++;
-   //    // stepTime = min(endTime, nextEvent.time)
-   //    // UpdateCorruptedData()
-
-   //    // sim.propogateFire(startTime, stepTime)
-   //    // sim.propagateFire();
-   //    sim.updateSpreadData();
-   //    // BurnDistances(startTime, stepTime)
-
-   //    // Accelerate(startTime, stepTime)
-
-   //    // TriggerNextEvent()
-   //    sim.startTime += stepTime;
-   // // }
-   int counter = 0;
-    while(sim.timeNext < INF){
+   #if MT
+      /////////////////////////////////////////////////////////////////////////////
+      //                              Minimal Time
+      /////////////////////////////////////////////////////////////////////////////
+      std::cout << "Beginning Simulation (Minimal Time)" << std::endl;
+      gettimeofday(&start, NULL);
+      int counter = 0;
+      char simType[20];
+      sprintf(simType, "../out/MT");
+      while(sim.timeNext < INF){
         sim.timeNow = sim.timeNext;
         sim.timeNext = INF;
         counter++;
@@ -84,8 +96,8 @@ int main(){
                             // compute ignition time
                             ROS = sim.rothData[row][col].x * (1.0 - sim.rothData[row][col].y) / 
                                   (1.0 - sim.rothData[row][col].y * cos(sim.rothData[row][col].z * pi/180));
-                            // std::cout << ROS << std::endl;
-                            float ignTimeNew = sim.timeNow + L_n[n] / ROS;
+
+                            float ignTimeNew = sim.timeNow + sim.L_n[n] / ROS;
 
                             if(ignTimeNew < sim.ignTime[ncell]){
                                 sim.ignTime[ncell] = ignTimeNew;
@@ -98,63 +110,209 @@ int main(){
                 }
             }
         }
-        // if(counter % 1000 == 0)
-            // std::cout << counter << std::endl;
-        std::cout << counter << endl;
-    }
-
-   // std::cout << "printing values in array:" << std::endl;
-   // int cell = 0; 
-   // for(int i = 0; i < sim.simDimX; i++){
-   //    for(int j =0;j<sim.simDimY;j++, cell++){
-   //       // std::cout << sim.orthoSpreadRate[i][j].x << ", ";
-   //       // std::cout << sim.orthoSpreadRate[i][j].y << ", ";
-   //       // std::cout << sim.orthoSpreadRate[i][j].z << ", ";
-   //       // std::cout << sim.orthoSpreadRate[i][j].w << ", ";
-   //       // std::cout << sim.diagSpreadRate[i][j].x << ", ";
-   //       // std::cout << sim.diagSpreadRate[i][j].y << ", ";
-   //       // std::cout << sim.diagSpreadRate[i][j].z << ", ";
-   //       // std::cout << sim.diagSpreadRate[i][j].w << ", ";
-   //       // std::cout << sim.timeOfArrival[i][j] << ", ";
-   //       std::cout << sim.slopeAspectElevationTexture[cell].x << ", "; 
-   // //       std::cout << sim.rothData[i][j].x << ", " <<sim.rothData[i][j].y << ", " <<sim.rothData[i][j].z << ", ";
-
-   //    }
-   //    std::cout<<std::endl;
-   // }
-   // int numMoistModels = sim._moistures.size();
-   // for(int i = 0; i < numMoistModels; i++){
-   //    // std::cout << sim.dead1hBuffer[i].x <<
-   //    //              sim.dead1hBuffer[i].y <<
-   //    //              sim.dead1hBuffer[i].z << std::endl;
-   // }
-   // end while
-   // lastUpdateTime = endTime
-   // delete sim;
-   std::cout << "End of Simulation" << std::endl;
+      }
+      std::cout << "End of Simulation" << std::endl;
+      // End Timer
+   #if PROFILE
+      gettimeofday(&fin, NULL);
+      double t_sim = fin.tv_usec + fin.tv_sec * 1000000.0;
+      t_sim -= start.tv_usec + start.tv_sec * 1000000.0;
+      t_sim /= 1000000.0;   
+      std::cout << "Processing simulation on " << sim.simDimX << " cells took " << t_sim << " seconds" << std::endl;
+   #endif
+   #endif
 
 
-   // Write data to file
 
-   char threadNum[21];
-   sprintf(threadNum, "_%d", sim.simDimX);
-   // char f_name[] = "data_MT";
-   char f_name[] = "../out/test";
-   char csv[] = ".csv";
-   strcat(f_name,threadNum);
-   strcat(f_name,csv);
-   fout.open(f_name);
+   #if IMT
+      /////////////////////////////////////////////////////////////////////////////
+      //                          Iterative Minimal Time
+      /////////////////////////////////////////////////////////////////////////////
+      std::cout << "Beginning Simulation (Iterative Minimal Time)" << std::endl;
+      gettimeofday(&start, NULL);
+      float ignCell = 0.;
+      float ignCellNew = 0.;
+      float ignTimeMin = INF;
+      int simCounter = 0;
+      bool* check = new bool[sim.simDimX*sim.simDimY];
+      for(int z = 0; z < sim.simDimX*sim.simDimY; z++){
+          check[z] = false;
+      }
 
-   for(int i = 0; i < sim.simDimX*sim.simDimY; i++){
-     // std::cout << ignTime[i] << " ,";
-     if(i %sim.simDimX == 0 && i !=0){
-         // std::cout << std::endl;
-         fout << '\n';
-     }
-     fout << (int)sim.ignTime[i] << " ";
-     // fout << (int)ignTimeNew[i] << " ";
+      // int counter = 0;
+      char simType[20];
+      sprintf(simType, "../out/IMT");
+      while(simCounter < sim.simDimX*sim.simDimY){
+        // counter++;
+
+        // Loop through all cells
+        // for(cell = 0; cell < CELLS; cell++){
+        for ( cell=0, row=0; row<sim.simDimX; row++ ){
+            for ( col=0; col<sim.simDimY; col++, cell++ ){
+                if(check[cell] == true)
+                    continue;
+                // Check for simulation completion
+                ignCell = sim.ignTime[cell];
+                ignCellNew = sim.ignTimeNew[cell];
+                // std::cout << ignCell << ' ' << ignTimeNew[cell];
+                if(fabs(ignCell - ignCellNew) < .00001 && ignCell != INF
+                        && ignCellNew != INF && check[cell] != true){
+                    simCounter++;
+                    check[cell] = true;
+                    continue;
+                }
+
+                if(ignCell > 0){
+                    // ignTimeMin = INF;
+                    ignTimeMin = INF;
+                    // Loop through neighbors
+                    for(int n = 0; n < 16; n++){
+                        // find neighbor cell index
+                        nrow = row + nRow[n];
+                        ncol = col + nCol[n];
+                        // std::cout << row << ' ' << col << ' ' << std::endl;
+                        if ( nrow<0 || nrow>= sim.simDimX || ncol<0 || ncol>=  sim.simDimY )
+                            continue;
+                        ncell = ncol + nrow*sim.simDimY;
+
+                        ROS = sim.rothData[row][col].x * (1.0 - sim.rothData[row][col].y) / 
+                              (1.0 - sim.rothData[row][col].y * cos(sim.rothData[row][col].z * pi/180));
+                        float ignTimeNew = sim.ignTime[ncell] + sim.L_n[n] / ROS;
+                        ignTimeMin = ignTimeNew*(ignTimeNew < ignTimeMin) + ignTimeMin*(ignTimeNew >= ignTimeMin);
+                    }
+                    sim.ignTimeNew[cell] = ignTimeMin;
+                }
+            }
+        }
+
+        // Swap pointers to loop
+        float *temp = sim.ignTime;
+        sim.ignTime = sim.ignTimeNew;
+        sim.ignTimeNew = temp;
+      }
+      std::cout << "End of Simulation" << std::endl;
+      // End Timer
+   #if PROFILE
+      gettimeofday(&fin, NULL);
+      double t_sim = fin.tv_usec + fin.tv_sec * 1000000.0;
+      t_sim -= start.tv_usec + start.tv_sec * 1000000.0;
+      t_sim /= 1000000.0;   
+      std::cout << "Processing simulation on " << sim.simDimX << " cells took " << t_sim << " seconds" << std::endl;
+   #endif
+   #endif
+
+
+
+   #if BURNDIST
+      /////////////////////////////////////////////////////////////////////////////
+      //                            Burning Distances
+      /////////////////////////////////////////////////////////////////////////////
+      std::cout << "Beginning Simulation (Burning Distances)" << std::endl;
+      int corner = 0;
+      char simType[20];
+      sprintf(simType, "../out/BD");
+      gettimeofday(&start, NULL);
+      
+      float t = 0.0;
+      while(corner < 4){   
+        for ( cell=0, row=0; row<sim.simDimX; row++ ){
+            for ( col=0; col<sim.simDimY; col++, cell++ ){
+                // check if already "ignited"
+               if(sim.ignTime[cell] == INF){
+                    continue;
+                }
+                // check neighbors for ignition
+                for(int n = 0; n < 8; n++){
+                    nrow = row + nRow[n];
+                    ncol = col + nCol[n];
+                    if ( nrow<0 || nrow>=sim.simDimX || ncol<0 || ncol>=sim.simDimY )
+                        continue;
+                    ncell = ncol + nrow*sim.simDimY;
+
+                    // check for already lit
+                    if(sim.ignTime[ncell] < INF){
+                        continue;
+                    }
+                    // Calc roth values
+
+                    ROS = sim.rothData[row][col].x * (1.0 - sim.rothData[row][col].y) / 
+                        (1.0 - sim.rothData[row][col].y * cos(sim.rothData[row][col].z * pi/180));
+
+                    // Burn distance 
+                    sim.burnDist[ncell][n] = sim.burnDistance(sim.burnDist[ncell][n], 
+                                                              ROS,
+                                                              sim.timeStep);
+                    // Propogate fire step:
+                    if(sim.burnDist[ncell][n] == 0){
+                        sim.ignTimeNew[ncell] = t;
+                        if(nrow == (sim.simDimX-1) && ncol == (sim.simDimY-1)){
+                            corner += 1;
+                        }
+                        if(nrow == 0 && ncol == (sim.simDimY-1)){
+                            corner += 1;
+                        }
+                        if(nrow == 0 && ncol == 0){
+                            corner += 1;
+                        }
+                        if(nrow == (sim.simDimX-1) && ncol == 0){
+                            corner += 1;
+                        }
+                    }
+
+                }
+            }
+        }
+        for(int i = 0; i < sim.simDimX*sim.simDimY; i++){
+            if(sim.ignTimeNew[i] < INF){
+                sim.ignTime[i] = sim.ignTimeNew[i];
+                sim.ignTimeNew[i] = INF;
+            }
+        }
+        if(corner == 4)
+            break;
+         t+= sim.timeStep;
+      }
+
+      std::cout << "End of Simulation" << std::endl << std::endl;
+      // End Timer
+   #if PROFILE
+      gettimeofday(&fin, NULL);
+      double t_sim = fin.tv_usec + fin.tv_sec * 1000000.0;
+      t_sim -= start.tv_usec + start.tv_sec * 1000000.0;
+      t_sim /= 1000000.0;   
+      std::cout << "Processing simulation on " << sim.simDimX << " cells took " << t_sim << " seconds" << std::endl;
+   #endif
+   #endif
+
+
+      // Write data to file
+      char threadNum[21];
+      sprintf(threadNum, "_%d_%d", sim.simDimX, sim.simDimY);
+      char csv[] = ".csv";
+      strcat(simType,threadNum);
+      strcat(simType,csv);
+      fout.open(simType);
+
+      for(int i = 0; i < sim.simDimX*sim.simDimY; i++){
+        // std::cout << ignTime[i] << " ,";
+        if(i %sim.simDimX == 0 && i !=0){
+            // std::cout << std::endl;
+            fout << '\n';
+        }
+        fout << (int)sim.ignTime[i] << " ";
+        // fout << (int)ignTimeNew[i] << " ";
+      }
+      fout.close();
+
+   #if PROFILE
+      double t_tot = t_sim + t_init + t_upSpread;
+      std::cout << "---------------- PROFILE -----------------" << std::endl;
+      std::cout << "Initialization Time: " << (t_init / t_tot)*100 << std::endl;
+      std::cout << "Update Spread Time: " << (t_upSpread / t_tot)*100 << std::endl;
+      std::cout << "Simulation Time: " << (t_sim / t_tot)*100 << std::endl<< std::endl<< std::endl;
+   #endif
+      
    }
-   fout.close();
 
    return 0;
 }
