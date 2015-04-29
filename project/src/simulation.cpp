@@ -6,9 +6,9 @@
 const int INF = 9999999;
 
 #define PROFILE 1
-#define BURNDIST 0
+#define BURNDIST 1
 #define MT 0
-#define IMT 1
+#define IMT 0
 
 // enum simulation_type {
 //    BURNDIST = 0,
@@ -17,7 +17,7 @@ const int INF = 9999999;
 // };
 
 int main(){
-   for(int T = 64; T < 65; T<<=1){
+   for(int T = 2048; T <= 2048; T<<=1){
       // Declare simulation variables
       int cell, row, col, nrow, ncol, ncell;
       // char simType[20];
@@ -223,6 +223,7 @@ int main(){
                 }
                 // check neighbors for ignition
                 for(int n = 0; n < 8; n++){
+                // for(int n = 0; n < 16; n++){
                     nrow = row + nRow[n];
                     ncol = col + nCol[n];
                     if ( nrow<0 || nrow>=sim.simDimX || ncol<0 || ncol>=sim.simDimY )

@@ -146,7 +146,7 @@ fireSim::~fireSim(){
    // for(int i = 0; i < simDimX; i++){
    //    delete timeOfArrival[i];
    //    delete rothData[i];
-   //    delete fuelTexture[i];;
+   //    // delete fuelTexture[i];;
    //    delete originalTimeOfArrival[i];;
    //    delete orthoSpreadRate[i];
    //    delete diagSpreadRate[i];
@@ -163,9 +163,9 @@ fireSim::~fireSim(){
    //    delete spreadData[i];;
 
    //    // rothermel
-   //    delete fuelTexture[i];;
-   //    delete slopeAspectElevationTexture[i];
-   //    delete windTexture[i];
+   //    // delete fuelTexture[i];;
+   //    // delete slopeAspectElevationTexture[i];
+   //    // delete windTexture[i];
    // }
    // delete timeOfArrival;
    // delete rothData;

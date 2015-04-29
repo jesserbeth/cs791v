@@ -8,22 +8,17 @@
 # 	rm -f *~
 
 FILES= simulation.cu kernel.cu fireSim.h fireSim.cpp FuelModel.h FuelMoisture.h
-CXXFLAGS= -g -o 
+CXXFLAGS= -g -arch=compute_20 -o
 SOURCE= fireSim
 INCLUDES= -I /usr/include/gdal/
 LIBS=  -L/usr/lib -lgdal
-# CC=g++
 CC= nvcc
 
 all: fireSim
 
 fireSim: simulation.cu fireSim.cpp 
-	$(CC) $^  $(CXXFLAGS) $@ $(LIBS) $(INCLUDES) -arch=sm_20
+	$(CC) --ptxas-options=-v $^  $(CXXFLAGS) $@ $(LIBS) $(INCLUDES) 
 
 clean:
 	rm -f *.o
 	rm -f *~
-
-
-
-fireSim.o: 

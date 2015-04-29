@@ -168,40 +168,34 @@ __global__ void ItMinTime(float* ignTimeIn, float* ignTimeOut, float* ignTimeSte
 /////////////////////////////////////////////////////////////////////////////
 //                            Burning Distances
 /////////////////////////////////////////////////////////////////////////////
-__global__ void BurnDist(float* ignTimeIn, float* ignTimeOut, float* rothData,
-                        float* times,float* L_n, int size, int rowSize,
-                        int colSize, float timeStep, float t){
+__global__ void BurnDist(float* ignTimeIn, float* ignTimeOut,float* burnDist,
+                         float* rothData, float* times,float* L_n, int size,
+                         int rowSize, int colSize, float timeStep, float t){
       /* neighbor's address*/     /* N  NE   E  SE   S  SW   W  NW  NNW NNE NEE SEE SSE SSW SWW NWW*/
-   int nCol[16] =        {  0,  1,  1,  1,  0, -1, -1, -1, -1, 1, 2, 2, 1, -1, -2, -2};
-   int nRow[16] =        {  1,  1,  0, -1, -1, -1,  0,  1, 2, 2, 1, -1, -2, -2, -1, 1};
+   int nCol[8] =        {  0,  1,  1,  1,  0, -1, -1, -1};
+   int nRow[8] =        {  1,  1,  0, -1, -1, -1,  0,  1};
    // printf("Iterative Minimal Time\n");
-   float ignCell = 0.;
-   float ignCellNew = 0.;
-   float ignTimeMin = INF;
    float ignTime, ignTimeN;
    float dist;
 
    int cell = blockIdx.x * blockDim.x + threadIdx.x;
-   int ncell, nrow, ncol, row, col;
-   float ignTimeNew, ROS;
+   int ncell, nrow, ncol, row, col, distCell;
+   float ROS;
 
-
-
-      int corner = 0;
-      
-      // float t = 0.0;
-      // while(corner < 4){   
-      //   for ( cell=0, row=0; row<sim.simDimX; row++ ){
-      //       for ( col=0; col<colSize; col++, cell++ ){
-                // check if already "ignited"
       while(cell < size){
+         row = cell / rowSize;
+         col = cell - rowSize*row;
+         // printf("%d ", cell);
          ignTime = ignTimeIn[cell];
          if(ignTime == INF){
             cell += blockDim.x * gridDim.x;
             continue;
           }
+
           // check neighbors for ignition
           for(int n = 0; n < 8; n++){
+            // printf("%d ", n);
+            distCell = cell * 8;
               nrow = row + nRow[n];
               ncol = col + nCol[n];
               if ( nrow<0 || nrow>=rowSize || ncol<0 || ncol>=colSize )
@@ -213,44 +207,34 @@ __global__ void BurnDist(float* ignTimeIn, float* ignTimeOut, float* rothData,
               if(ignTimeN < INF){
                   continue;
               }
+
               // Calc roth values
               ROS = rothData[3*cell + 0] * (1.0 - rothData[3*cell + 1]) / 
-                (1.0 - rothData[3*cell + 1] * cos(rothData[3*cell + 2] * 3.14159/180));
+                (1.0 - rothData[3*cell + 1] * cos(rothData[3*cell + 2] * 3.14159/180.));
 
               // Burn distance
-              dist = burnDist[ncell][n];
-              dist = dist - rate*step;
-              if(dist<0)
-               dist = 0;
+              dist = burnDist[distCell+n];
+              dist = dist - ROS*timeStep;
+              burnDist[distCell+n] = dist;
+
               // Propogate fire 
-              if(dist == 0){
-                 ignTimeOut[ncell] = t;
+              if(dist <= 0){
+                float old = atomicExch(&ignTimeOut[ncell], t);
+                if(old < t)
+                   atomicExch(&ignTimeOut[ncell], old);
+                if(ncell == 0)
+                  atomicAdd(&end, 1);
+                if(ncell == (rowSize - 1))
+                  atomicAdd(&end, 1);
+                if(ncell == (nrow*rowSize-1))
+                  atomicAdd(&end, 1);
+                if(ncell == size -1)
+                  atomicAdd(&end, 1);
               }
-              // sim.burnDist[ncell][n] = sim.burnDistance(sim.burnDist[ncell][n], 
-              //                                           ROS,
-              //                                           sim.timeStep);
-              // // Propogate fire step:
-              // if(sim.burnDist[ncell][n] == 0){
-              //     sim.ignTimeNew[ncell] = t;
-              //     if(nrow == (rowSize-1) && ncol == (colSize-1)){
-              //         corner += 1;
-              //     }
-              //     if(nrow == 0 && ncol == (colSize-1)){
-              //         corner += 1;
-              //     }
-              //     if(nrow == 0 && ncol == 0){
-              //         corner += 1;
-              //     }
-              //     if(nrow == (rowSize-1) && ncol == 0){
-              //         corner += 1;
-              //     }
-              // }
+
           }
          cell += blockDim.x * gridDim.x;
       }
-
-      if(blockIdx.x * blockDim.x + threadIdx.x == 0)
-         t += timeStep;
 }
 
 
@@ -296,7 +280,7 @@ __global__ void copyKernelIMT(float* input, float* output, bool* check, int size
 /////////////////////////////////////////////////////////////////////////////
 //                             Copy Kernel (BD)
 /////////////////////////////////////////////////////////////////////////////
-__global__ void copyKernelBD(float* input, float* output, bool* check, int size){
+__global__ void copyKernelBD(float* input, float* output, int size){
    // copy from output to input
    int cell = blockIdx.x * blockDim.x + threadIdx.x;
    // printf("%d ", cell);
@@ -304,12 +288,13 @@ __global__ void copyKernelBD(float* input, float* output, bool* check, int size)
 
    while(cell < size){
       input[cell] = output[cell];
-      if(check[cell] == true){
-         // printf("true\n");
-         atomicAdd(&end, 1);
-      }
+      // if(check[cell] == true){
+      //    // printf("true\n");
+      //    atomicAdd(&end, 1);
+      // }
       cell += blockDim.x * gridDim.x;
       // printf("%d ", end);
    }
+   // printf("copy_out\n");
 }
 #endif // KERNEL_H_
