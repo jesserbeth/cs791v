@@ -28,7 +28,7 @@ int main(){
   // cout << "Name: " << prop.name << endl;
   // cout << "RegPerBlock: " << prop.regsPerBlock << endl;
   // int SIMTYPE = 1;
-   for(int S = 2048; S <= 2048; S<<=1){
+   for(int S = 256; S <= 256; S<<=1){
     cout << "Timing: " << S << "x" << S << " Input" << endl;
       // Declare simulation variables
       // int cell, row, col, nrow, ncol, ncell;
@@ -44,15 +44,16 @@ int main(){
 
     // Allocate Roth Data for GPU
     float* gpuRoth;
-    gpuRoth = (float*)malloc(sim.simDimX*sim.simDimY*3*sizeof(float));
     float* gpuTime;
-    gpuTime = (float*)malloc(sim.simDimX*sim.simDimY*sizeof(float));
     float* timeSteppers;
-    timeSteppers = (float*)malloc(2*sizeof(float));
     float* loc_L_n;
-    loc_L_n = (float*)malloc(16*sizeof(float));
-    bool* check = (bool*)malloc(sim.simDimX*sim.simDimY*sizeof(bool));
     float* loc_burnDist;
+    bool* check;
+    gpuRoth = (float*)malloc(sim.simDimX*sim.simDimY*3*sizeof(float));
+    gpuTime = (float*)malloc(sim.simDimX*sim.simDimY*sizeof(float));
+    timeSteppers = (float*)malloc(2*sizeof(float));
+    loc_L_n = (float*)malloc(16*sizeof(float));
+    check = (bool*)malloc(sim.simDimX*sim.simDimY*sizeof(bool));
     loc_burnDist = (float*)malloc(8*sim.simDimX*sim.simDimY*sizeof(float));
 
 
@@ -156,17 +157,28 @@ int main(){
     // int T = 128;
     int B = S;
     int T = S;
-    if(T >= 1024)
+#if !MT
+    if(T >= 1024){
       T = 512;
+      B = sim.simDimX*sim.simDimY / T;
+    }
+#endif
+#if MT
+    if(T >= 1024){
+      T = 512;
+      // B = 2048;
+    }
+#endif
 #if BD
     float t = 0.0;
 #endif
     while(terminate <= 0){
-    // while(counter < 50){
+    // while(counter < 500){
       counter++;
 #if MT
         // Do calculations
         MinTime<<<B,T>>>(g_ignTime_in, g_ignTime_out, g_rothData, 
+        // MinTime<<<1,1>>>(g_ignTime_in, g_ignTime_out, g_rothData, 
                          g_times, g_L_n, sim.simDimX*sim.simDimY,
                          sim.simDimX, sim.simDimY);
         // cout << "step caclulated\n";
@@ -193,6 +205,7 @@ int main(){
       // ITERATIVE MINIMAL TIME
         // Do calculations
         ItMinTime<<<B,T>>>(g_ignTime_in,g_ignTime_out, g_ignTime_step, g_rothData, 
+        // ItMinTime<<<1,1>>>(g_ignTime_in,g_ignTime_out, g_ignTime_step, g_rothData,
                            g_times, g_L_n, g_check, sim.simDimX*sim.simDimY,
                            sim.simDimX, sim.simDimY);
         // cout << "step caclulated\n";

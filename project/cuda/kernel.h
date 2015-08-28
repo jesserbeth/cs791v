@@ -22,26 +22,33 @@ __global__ void MinTime(float* ignTimeIn, float* ignTimeOut, float* rothData,
    int cell = blockIdx.x * blockDim.x + threadIdx.x;
    int ncell, nrow, ncol, row, col;
    float ignCell, ignCellN, timeNext, timeNow, ROS;
+   // float _timeN = INF;
+   // bool update = true;
    // bool work = false;
 
    timeNow = times[1]; // timeNow = timeNext
    timeNext = INF;
-   // printf("%d ", blockSize);
+   // printf("%d ", 5);
 
    while(cell < size){
+    // printf("%d ", cell);
+    // timeNext = INF;
       row = cell / rowSize;
       col = cell - rowSize*row;
       ignCell = ignTimeIn[cell];
 
       // Do atomic update of TimeNext Var (atomicMin)
       // if(timeNext > ignTimeIn[cell] && ignTimeIn[cell] > timeNow){
-      if(timeNext > ignTimeIn[cell] && ignTimeIn[cell] > timeNow){
+      if(timeNext > ignCell && ignCell > timeNow){
          atomicExch(&times[1], ignCell);
+          // printf("%d ", 5);
+         // times[1] = ignCell;
          timeNext = ignCell;
          // work = true;
          // printf("timeupdate\n");
       }
       else if(ignCell == timeNow){
+      // if(ignCell == timeNow){
          // Find burning cells
          for(int n = 0; n < 16; n++){
             // // Propagate from burning cells      
@@ -58,28 +65,68 @@ __global__ void MinTime(float* ignTimeIn, float* ignTimeOut, float* rothData,
 
             // If neighbor is unburned
             if(ignCellN > timeNow){
+            // if(ignCellN == INF){
                 // compute ignition time
                 ROS = rothData[3*cell + 0] * (1.0 - rothData[3*cell + 1]) / 
                       (1.0 - rothData[3*cell + 1] * cos(rothData[3*cell + 2] * 3.14159/180));
+
                 float ignTimeNew = timeNow + L_n[n] / ROS;
+
+
                 // printf("%f, %f, %f, %f \n", timeNow, L_n[n], ROS, ignTimeNew);
 
                 // if(ignTimeNew < ignCellN){
-                // if(ignTimeNew < ignTimeOut[ncell]){
-                    // ignTime[ncell] = ignTimeNew; // This could cause a race cond.
-                float old = atomicExch(&ignTimeOut[ncell], ignTimeNew);
-                if(old < ignTimeNew)
-                   atomicExch(&ignTimeOut[ncell], old);
+                //   printf("test1: %d ", ignTimeNew);
                 // }
-                if(ignTimeNew < timeNext){
-                  atomicExch(&times[1], ignTimeNew);
+                  float old = atomicExch(&ignTimeOut[ncell], ignTimeNew);
+                  // Check to make sure we don't overwrite the past
+                  if(old < ignTimeNew){
+                    atomicExch(&ignTimeOut[ncell], old);
+                  // printf("test2: %d \n", ignTimeNew);
+                  }
+                // if(ignTimeNew < ignTimeIn[ncell])
+                //     ignTimeOut[ncell] = ignTimeNew; // This could cause a race cond.
+                
+
+
+                // }
+
+
+                /*if(ignTimeNew < timeNext){
+                // if(ignTimeNew < times[1]){
+                  // update = false;
+                  old = atomicExch(&times[1], ignTimeNew);
                   // timeNext = ignTimeNew;
+                  
+                  if(old < ignTimeNew && old > timeNext){
+                  // if(old < ignTimeNew && old > timeNow){
+                    atomicExch(&times[1], old);
+                    printf("%d ", 1);
+                    // timeNext = old;
+                  }
+
+                  // printf("cell: %d updated\n", cell);
+                  // if(ignTimeNew < _timeN)
+                    // _timeN = ignTimeNew; 
                   // printf("%f, %f \n \n", times[1], ignTimeNew);
+                }*/
+                // Local timeNext update
+                if(ignTimeNew < timeNext){
+                  timeNext = ignTimeNew;
                 }
             }
          }
+         // Check global timenext 
+         float nextCheck = atomicExch(&times[1], timeNext);
+                  // timeNext = ignTimeNew;
+                  
+          if(nextCheck < timeNext){
+            atomicExch(&times[1], nextCheck);
+            // printf("%d ", 1);
+          }
          // work = true;
       }
+                  // timeNext = _timeN;
      // if(timeNext == INF && work == true){
      // // if(timeNext == INF){
      //     // printf("BLAH");
@@ -91,6 +138,11 @@ __global__ void MinTime(float* ignTimeIn, float* ignTimeOut, float* rothData,
       cell += blockDim.x * gridDim.x;
       // printf("%d \n", cell);
    }
+   // timeNext = _timeN;
+   // float newt = atomicExch(&times[1], timeNext);
+   // if(newt < timeNext)
+   //  atomicExch(&times[1], newt);
+
    if(blockIdx.x * blockDim.x + threadIdx.x == 0)
       end = 0;
 
@@ -127,7 +179,7 @@ __global__ void ItMinTime(float* ignTimeIn, float* ignTimeOut, float* ignTimeSte
       ignCell = ignTimeIn[cell];
       ignCellNew = ignTimeOut[cell];
       // Convergence Test
-      if(fabs(ignCell - ignCellNew) < .00001 && ignCell != INF
+      if(fabs(ignCell - ignCellNew) < .00001f && ignCell != INF
             && ignCellNew != INF && check[cell] != true){
         check[cell] = true;
         cell += blockDim.x * gridDim.x;  
@@ -149,8 +201,8 @@ __global__ void ItMinTime(float* ignTimeIn, float* ignTimeOut, float* ignTimeSte
             }
             ncell = ncol + nrow*colSize;
 
-            ROS = rothData[3*cell + 0] * (1.0 - rothData[3*cell + 1]) / 
-                (1.0 - rothData[3*cell + 1] * cos(rothData[3*cell + 2] * 3.14159/180));
+            ROS = rothData[3*cell + 0] * (1.0f - rothData[3*cell + 1]) / 
+                (1.0 - rothData[3*cell + 1] * cos(rothData[3*cell + 2] * 3.14159f/180));
             ignTimeNew = ignTimeIn[ncell] + L_n[n] / ROS;
             // printf("ignTimeNew: %f ", ignTimeNew);
             ignTimeMin = ignTimeNew*(ignTimeNew < ignTimeMin) + ignTimeMin*(ignTimeNew >= ignTimeMin);

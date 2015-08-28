@@ -6,8 +6,8 @@
 const int INF = 9999999;
 
 #define PROFILE 1
-#define BURNDIST 1
-#define MT 0
+#define BURNDIST 0
+#define MT 1
 #define IMT 0
 
 // enum simulation_type {
@@ -17,7 +17,8 @@ const int INF = 9999999;
 // };
 
 int main(){
-   for(int T = 2048; T <= 2048; T<<=1){
+   // for(int T = 2048; T <= 2048; T<<=1){
+   for(int T = 256; T <= 256; T<<=1){
       // Declare simulation variables
       int cell, row, col, nrow, ncol, ncell;
       // char simType[20];
@@ -77,8 +78,10 @@ int main(){
         // for(cell = 0; cell < CELLS; cell++){
         for ( cell=0, row=0; row<sim.simDimX; row++ ){
             for ( col=0; col<sim.simDimY; col++, cell++ ){
+              // printf("Cell: %d\n", cell);
                 if(sim.timeNext > sim.ignTime[cell] && sim.ignTime[cell] > sim.timeNow){
                     sim.timeNext = sim.ignTime[cell];
+                    // printf("Hitting here: %d \n", cell);
                 }
                 else if( sim.ignTime[cell] == sim.timeNow){
                     for(int n = 0; n < 16; n++){
@@ -217,7 +220,7 @@ int main(){
       while(corner < 4){   
         for ( cell=0, row=0; row<sim.simDimX; row++ ){
             for ( col=0; col<sim.simDimY; col++, cell++ ){
-                // check if already "ignited"
+                // check not "ignited"
                if(sim.ignTime[cell] == INF){
                     continue;
                 }
@@ -289,10 +292,11 @@ int main(){
       // Write data to file
       char threadNum[21];
       sprintf(threadNum, "_%d_%d", sim.simDimX, sim.simDimY);
-      char csv[] = ".csv";
+      char csv[] = "_S.csv";
       strcat(simType,threadNum);
       strcat(simType,csv);
       fout.open(simType);
+      printf("Writing out to %s\n", simType);
 
       for(int i = 0; i < sim.simDimX*sim.simDimY; i++){
         // std::cout << ignTime[i] << " ,";

@@ -16,8 +16,13 @@ CC= nvcc
 
 all: fireSim
 
+# Register Compile
+# fireSim: simulation.cu fireSim.cpp 
+# 	$(CC) --ptxas-options=-v $^  $(CXXFLAGS) $@ $(LIBS) $(INCLUDES) 
+
+# Non-Register Compile
 fireSim: simulation.cu fireSim.cpp 
-	$(CC) --ptxas-options=-v $^  $(CXXFLAGS) $@ $(LIBS) $(INCLUDES) 
+	$(CC) $^  $(CXXFLAGS) $@ $(LIBS) $(INCLUDES) 
 
 clean:
 	rm -f *.o
